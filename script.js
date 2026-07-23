@@ -3,15 +3,16 @@
 // ================================================================
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-import { 
-  getFirestore, 
-  collection, 
-  addDoc, 
-  getDocs, 
-  doc, 
-  setDoc, 
-  getDoc 
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  getDocs,
+  doc,
+  setDoc,
+  getDoc
 } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDfgmkRb1CC_TSxObOtiyvFuY2Z4Nqz7Pc",
@@ -24,6 +25,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
 
 // ----------------------------------------------------------------
 // DATA
@@ -271,30 +273,30 @@ const PB_FIELD_IDS = [
   // General Information
   'pb_tanggal', 'pb_machine', 'pb_machine_custom', 'pb_mould', 'pb_cavity', 'pb_produksi', 'pb_ket',
   'pb_material', 'pb_material_custom', 'pb_berat_shoot', 'pb_berat_unit', 'pb_berat_runner', 'pb_cycleTime',
-  
+
   // Temp & Heater
   'pb_nozzle', 'pb_front', 'pb_middle', 'pb_rear', 'pb_hopper', 'pb_coolCavity', 'pb_coolCore', 'pb_oilTemp',
   'pb_heater1', 'pb_heater2', 'pb_heater3', 'pb_heater4', 'pb_block', 'pb_hnSprue',
-  
+
   // Mould Close / Open
   'pb_mp_time', 'pb_mp_torque', 'pb_mo_time', 'pb_mo_torque',
-  
+
   // Injection Stage 1-7
   'pb_v1', 'pb_v2', 'pb_v3', 'pb_v4', 'pb_v5', 'pb_v6', 'pb_v7',
   'pb_p1', 'pb_p2', 'pb_p3', 'pb_p4', 'pb_p5', 'pb_p6', 'pb_p7',
   'pb_ls1', 'pb_ls2', 'pb_ls3', 'pb_ls4', 'pb_ls5', 'pb_ls6', 'pb_ls7',
-  
+
   // Holding Pressure
   'pb_hold_p5', 'pb_hold_p4', 'pb_hold_p3', 'pb_hold_p2', 'pb_hold_p1',
   'pb_hold_t5', 'pb_hold_t4', 'pb_hold_t3', 'pb_hold_t2', 'pb_hold_t1',
-  
+
   // Plastifikasi & Melt Decomp
   'pb_screwSpeed', 'pb_backPress', 'pb_dosingPos',
   'pb_vsb', 'pb_lsb',
-  
+
   // Ejector
   'pb_ej_ko', 'pb_ej_semi', 'pb_ej_std', 'pb_ej_pre',
-  
+
   // Timing
   'pb_coolingTime', 'pb_cureTime', 'pb_injTime', 'pb_suckBack'
 ];
@@ -326,21 +328,24 @@ function showPanel(panelId, skipPushState = false) {
 // MODE SWITCHING
 // ----------------------------------------------------------------
 function switchMode(mode, skipPushState = false) {
+  const pl = document.getElementById('printLayout');
+  if (pl) pl.style.display = 'none';
+  
   currentMode = mode;
   sessionStorage.setItem('currentMode', mode);
   document.body.classList.toggle('is-home', mode === 'home');
 
-  const mterEl       = document.getElementById('mterMode');
-  const mterMenuEl   = document.getElementById('mterMenuMode');
-  const homeEl       = document.getElementById('homeMode');
-  const pbEl         = document.getElementById('paramBankMode');
-  const pbMenuEl     = document.getElementById('paramBankMenuMode');
-  const rhEl         = document.getElementById('reportHistoryMode');
+  const mterEl = document.getElementById('mterMode');
+  const mterMenuEl = document.getElementById('mterMenuMode');
+  const homeEl = document.getElementById('homeMode');
+  const pbEl = document.getElementById('paramBankMode');
+  const pbMenuEl = document.getElementById('paramBankMenuMode');
+  const rhEl = document.getElementById('reportHistoryMode');
   const reportMenuEl = document.getElementById('reportMenuMode');
-  const csEl         = document.getElementById('coolingSketchMode');
-  const appHeader    = document.getElementById('appHeader');
-  const hTitle       = document.getElementById('headerTitle');
-  const hSub         = document.getElementById('headerSub');
+  const csEl = document.getElementById('coolingSketchMode');
+  const appHeader = document.getElementById('appHeader');
+  const hTitle = document.getElementById('headerTitle');
+  const hSub = document.getElementById('headerSub');
 
   // Hide all modes
   [mterEl, mterMenuEl, homeEl, pbEl, pbMenuEl, rhEl, reportMenuEl, csEl].forEach(el => {
@@ -367,7 +372,7 @@ function switchMode(mode, skipPushState = false) {
   } else if (mode === 'mter') {
     if (mterEl) mterEl.style.display = '';
     hTitle.textContent = 'MTER Checksheet';
-    hSub.textContent   = 'Mold Trial & Evaluation Report';
+    hSub.textContent = 'Mold Trial & Evaluation Report';
     if (!activePanelId) {
       activePanelId = 'panel-header-info';
       document.getElementById('panel-header-info')?.classList.add('active');
@@ -375,7 +380,7 @@ function switchMode(mode, skipPushState = false) {
   } else if (mode === 'parambank') {
     if (pbEl) pbEl.style.display = '';
     hTitle.textContent = 'Parameter Bank';
-    hSub.textContent   = 'Standardisasi Parameter Mesin';
+    hSub.textContent = 'Standardisasi Parameter Mesin';
     // Show first panel if nothing active
     if (!activePanelId || !activePanelId.startsWith('panel-pb-')) {
       activePanelId = 'panel-pb-umum';
@@ -385,16 +390,16 @@ function switchMode(mode, skipPushState = false) {
   } else if (mode === 'coolingsketch') {
     if (csEl) csEl.style.display = '';
     hTitle.textContent = 'Cooling Sketch';
-    hSub.textContent   = 'Sketsa Jalur Pendingin Mould';
+    hSub.textContent = 'Sketsa Jalur Pendingin Mould';
   } else if (mode === 'reporthistory') {
     if (rhEl) rhEl.style.display = 'block';
     hTitle.textContent = 'Report History';
-    hSub.textContent   = 'Arsip Laporan MTER';
+    hSub.textContent = 'Arsip Laporan MTER';
     renderReportHistory();
   } else if (mode === 'analytics') {
     document.getElementById('analyticsMode').style.display = 'block';
     hTitle.textContent = 'Analisa & Dashboard';
-    hSub.textContent   = 'Visualisasi Data KPI';
+    hSub.textContent = 'Visualisasi Data KPI';
     renderAnalyticsDashboard();
   }
 
@@ -408,29 +413,35 @@ function switchMode(mode, skipPushState = false) {
 function renderMterMenu() {
   const container = document.getElementById('mterMenuContainer');
   if (!container) return;
-  
+
   const mterMenuData = [
-    { title: 'Informasi Umum', items: [
-      { label: 'Header Info', id: 'HeaderInfo', panel: 'panel-header-info', bg: '#dcfce7', col: '#16a34a', icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>' },
-      { label: 'A. Mesin Injeksi', id: 'InjMachine', panel: 'panel-inj-machine', bg: '#dcfce7', col: '#16a34a', icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><path d="M6 14v-4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v4"/><circle cx="12" cy="18" r="2"/></svg>' }
-    ]},
-    { title: 'B. Mold Mechanism', items: [
-      { label: 'B.1 Opening', id: 'B1Opening', panel: 'panel-b1-opening', bg: '#f3e8ff', col: '#9333ea', icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>' },
-      { label: 'B.2 Slider', id: 'B2Slider', panel: 'panel-b2-slider', bg: '#f3e8ff', col: '#9333ea', icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>' },
-      { label: 'B.3 Ejector', id: 'B3Ejector', panel: 'panel-b3-ejector', bg: '#f3e8ff', col: '#9333ea', icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="16 12 12 8 8 12"/><line x1="12" y1="16" x2="12" y2="8"/></svg>' },
-      { label: 'B.4 Hydraulic', id: 'B4Hydraulic', panel: 'panel-b4-hydraulic', bg: '#f3e8ff', col: '#9333ea', icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/></svg>' },
-      { label: 'B.5 Cooling', id: 'B5Cooling', panel: 'panel-b5-cooling', bg: '#f3e8ff', col: '#9333ea', icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>' },
-      { label: 'B.6 Hot Runner', id: 'B6HotRunner', panel: 'panel-b6-hotrunner', bg: '#f3e8ff', col: '#9333ea', icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="M9 15l3-3 3 3"/></svg>' },
-      { label: 'B.7 Unscrewing', id: 'B7Unscrewing', panel: 'panel-b7-unscrewing', bg: '#f3e8ff', col: '#9333ea', icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 12a4 4 0 0 0-8 0"/></svg>' },
-      { label: 'B.8 Take Out', id: 'B8TakeOut', panel: 'panel-b8-takeout', bg: '#f3e8ff', col: '#9333ea', icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5.5"/><polyline points="7 12 3 15 7 18"/><line x1="21" y1="3" x2="16" y2="8"/><line x1="16" y1="3" x2="21" y2="8"/></svg>' },
-      { label: 'B.9 Balancing', id: 'B9Balancing', panel: 'panel-b9-balancing', bg: '#f3e8ff', col: '#9333ea', icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>' }
-    ]},
-    { title: 'Evaluasi Part', items: [
-      { label: 'C. Demoulding', id: 'CDemoulding', panel: 'panel-c-demoulding', bg: '#e0f2fe', col: '#0284c7', icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>' },
-      { label: 'D. Aesthetic', id: 'DAesthetic', panel: 'panel-d-aesthetic', bg: '#e0f2fe', col: '#0284c7', icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>' },
-      { label: 'E. Cavity', id: 'ECavity', panel: 'panel-e-cavity', bg: '#e0f2fe', col: '#0284c7', icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><rect x="7" y="7" width="3" height="9"/><rect x="14" y="7" width="3" height="5"/></svg>' },
-      { label: 'F. Conclusion', id: 'FConclusion', panel: 'panel-f-conclusion', bg: '#e0f2fe', col: '#0284c7', icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>' }
-    ]}
+    {
+      title: 'Informasi Umum', items: [
+        { label: 'Header Info', id: 'HeaderInfo', panel: 'panel-header-info', bg: '#dcfce7', col: '#16a34a', icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>' },
+        { label: 'A. Mesin Injeksi', id: 'InjMachine', panel: 'panel-inj-machine', bg: '#dcfce7', col: '#16a34a', icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><path d="M6 14v-4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v4"/><circle cx="12" cy="18" r="2"/></svg>' }
+      ]
+    },
+    {
+      title: 'B. Mold Mechanism', items: [
+        { label: 'B.1 Opening', id: 'B1Opening', panel: 'panel-b1-opening', bg: '#f3e8ff', col: '#9333ea', icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>' },
+        { label: 'B.2 Slider', id: 'B2Slider', panel: 'panel-b2-slider', bg: '#f3e8ff', col: '#9333ea', icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>' },
+        { label: 'B.3 Ejector', id: 'B3Ejector', panel: 'panel-b3-ejector', bg: '#f3e8ff', col: '#9333ea', icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="16 12 12 8 8 12"/><line x1="12" y1="16" x2="12" y2="8"/></svg>' },
+        { label: 'B.4 Hydraulic', id: 'B4Hydraulic', panel: 'panel-b4-hydraulic', bg: '#f3e8ff', col: '#9333ea', icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/></svg>' },
+        { label: 'B.5 Cooling', id: 'B5Cooling', panel: 'panel-b5-cooling', bg: '#f3e8ff', col: '#9333ea', icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>' },
+        { label: 'B.6 Hot Runner', id: 'B6HotRunner', panel: 'panel-b6-hotrunner', bg: '#f3e8ff', col: '#9333ea', icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="M9 15l3-3 3 3"/></svg>' },
+        { label: 'B.7 Unscrewing', id: 'B7Unscrewing', panel: 'panel-b7-unscrewing', bg: '#f3e8ff', col: '#9333ea', icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 12a4 4 0 0 0-8 0"/></svg>' },
+        { label: 'B.8 Take Out', id: 'B8TakeOut', panel: 'panel-b8-takeout', bg: '#f3e8ff', col: '#9333ea', icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5.5"/><polyline points="7 12 3 15 7 18"/><line x1="21" y1="3" x2="16" y2="8"/><line x1="16" y1="3" x2="21" y2="8"/></svg>' },
+        { label: 'B.9 Balancing', id: 'B9Balancing', panel: 'panel-b9-balancing', bg: '#f3e8ff', col: '#9333ea', icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>' }
+      ]
+    },
+    {
+      title: 'Evaluasi Part', items: [
+        { label: 'C. Demoulding', id: 'CDemoulding', panel: 'panel-c-demoulding', bg: '#e0f2fe', col: '#0284c7', icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>' },
+        { label: 'D. Aesthetic', id: 'DAesthetic', panel: 'panel-d-aesthetic', bg: '#e0f2fe', col: '#0284c7', icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>' },
+        { label: 'E. Cavity', id: 'ECavity', panel: 'panel-e-cavity', bg: '#e0f2fe', col: '#0284c7', icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><rect x="7" y="7" width="3" height="9"/><rect x="14" y="7" width="3" height="5"/></svg>' },
+        { label: 'F. Conclusion', id: 'FConclusion', panel: 'panel-f-conclusion', bg: '#e0f2fe', col: '#0284c7', icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>' }
+      ]
+    }
   ];
 
   let html = '';
@@ -439,7 +450,7 @@ function renderMterMenu() {
       <div class="mter-menu-category-title">${cat.title}</div>
       <div class="mter-grid">`;
     cat.items.forEach(item => {
-      const isSaved = state.saved[item.id];
+      const isSaved = state.saved[item.id] || localStorage.getItem(`mter-saved-${item.id}`) === '1';
       html += `
         <div class="mter-item" onclick="showPanel('${item.panel}')">
           <div class="mter-icon-wrap" style="background:${item.bg || ''}; color:${item.col || ''};">
@@ -459,34 +470,69 @@ function renderParamBankMenu() {
   if (!container) return;
 
   const pbMenuData = [
-    { label: 'Informasi Umum',           panel: 'panel-pb-umum',         color: '#3b82f6',
-      icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>' },
-    { label: 'Material & Berat',          panel: 'panel-pb-material',     color: '#8b5cf6',
-      icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>' },
-    { label: 'Temperatur (\u00b0C)',        panel: 'panel-pb-temp',         color: '#06b6d4',
-      icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>' },
-    { label: 'Heater Control (\u00b0C)',    panel: 'panel-pb-heater',       color: '#f59e0b',
-      icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>' },
-    { label: 'Mould Close / Open',        panel: 'panel-pb-mouldclose',   color: '#10b981',
-      icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>' },
-    { label: 'Injection',                 panel: 'panel-pb-injection',    color: '#ef4444',
-      icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="12" x2="2" y2="12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>' },
-    { label: 'Holding Pressure',          panel: 'panel-pb-holding',      color: '#6366f1',
-      icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>' },
-    { label: 'Plastifikasi & Melt Decomp',panel: 'panel-pb-plastifikasi', color: '#0ea5e9',
-      icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z"/><path d="M12 8v4l3 3"/></svg>' },
-    { label: 'Ejector',                   panel: 'panel-pb-ejector',      color: '#84cc16',
-      icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 11 21 7 17 3"/><line x1="21" y1="7" x2="9" y2="7"/><polyline points="7 21 3 17 7 13"/><line x1="15" y1="17" x2="3" y2="17"/></svg>' },
-    { label: 'Cycle Time & Timing',       panel: 'panel-pb-cycletime',    color: '#f97316',
-      icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>' },
+    {
+      label: 'Informasi Umum', panel: 'panel-pb-umum', color: '#3b82f6',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>'
+    },
+    {
+      label: 'Material & Berat', panel: 'panel-pb-material', color: '#8b5cf6',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>'
+    },
+    {
+      label: 'Temperatur (\u00b0C)', panel: 'panel-pb-temp', color: '#06b6d4',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>'
+    },
+    {
+      label: 'Heater Control (\u00b0C)', panel: 'panel-pb-heater', color: '#f59e0b',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>'
+    },
+    {
+      label: 'Mould Close / Open', panel: 'panel-pb-mouldclose', color: '#10b981',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>'
+    },
+    {
+      label: 'Injection', panel: 'panel-pb-injection', color: '#ef4444',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="12" x2="2" y2="12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>'
+    },
+    {
+      label: 'Holding Pressure', panel: 'panel-pb-holding', color: '#6366f1',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>'
+    },
+    {
+      label: 'Plastifikasi & Melt Decomp', panel: 'panel-pb-plastifikasi', color: '#0ea5e9',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z"/><path d="M12 8v4l3 3"/></svg>'
+    },
+    {
+      label: 'Ejector', panel: 'panel-pb-ejector', color: '#84cc16',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 11 21 7 17 3"/><line x1="21" y1="7" x2="9" y2="7"/><polyline points="7 21 3 17 7 13"/><line x1="15" y1="17" x2="3" y2="17"/></svg>'
+    },
+    {
+      label: 'Cycle Time & Timing', panel: 'panel-pb-cycletime', color: '#f97316',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>'
+    },
   ];
 
   let html = '<div class="mter-menu-category"><div class="mter-grid">';
   pbMenuData.forEach(item => {
+    const panelEl = document.getElementById(item.panel);
+    let isFilled = false;
+    if (panelEl) {
+      // Ambil semua input dan select, abaikan tombol pencarian otomatis atau field tersembunyi
+      const inputs = panelEl.querySelectorAll('input:not([type="hidden"]):not([style*="display: none"]), select');
+      for (let inp of inputs) {
+        // Jika ada value yang bukan string kosong dan bukan value default select
+        if (inp.value && inp.value.trim() !== '' && inp.value !== 'tambah_baru') {
+          isFilled = true;
+          break;
+        }
+      }
+    }
+
     html += `
       <div class="mter-item" onclick="showPanel('${item.panel}')">
         <div class="mter-icon-wrap" style="background:${item.color}20; color:${item.color};">
           ${item.icon}
+          ${isFilled ? '<div class="mter-check"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>' : ''}
         </div>
         <div class="mter-item-label">${item.label}</div>
       </div>
@@ -501,10 +547,14 @@ function renderReportMenu() {
   if (!container) return;
 
   const reportMenuData = [
-    { label: 'Report History\n(Arsip)',      mode: 'reporthistory', color: '#3b82f6',
-      icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18M3 9h18M3 15h18M3 21h18"/></svg>' },
-    { label: 'Analisa &amp;\nDashboard (KPI)', mode: 'analytics',     color: '#10b981',
-      icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>' },
+    {
+      label: 'Report History\n(Arsip)', mode: 'reporthistory', color: '#3b82f6',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18M3 9h18M3 15h18M3 21h18"/></svg>'
+    },
+    {
+      label: 'Analisa &amp;\nDashboard (KPI)', mode: 'analytics', color: '#10b981',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>'
+    },
   ];
 
   let html = '<div class="mter-menu-category"><div class="mter-grid">';
@@ -546,7 +596,7 @@ async function renderReportHistory() {
   if (!listEl || !emptyEl) return;
 
   listEl.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-light);">Memuat laporan dari database...</div>';
-  
+
   let saved = [];
   try {
     const querySnapshot = await getDocs(collection(db, "reports"));
@@ -634,6 +684,7 @@ function buildToggleItems(containerId, items, stateKey, notesKey) {
           wrap.querySelectorAll('.t-btn').forEach(b => b.classList.remove('sel'));
           btn.classList.add('sel');
         }
+        if (typeof saveDraftToLocal === 'function') saveDraftToLocal();
       });
     });
 
@@ -704,6 +755,7 @@ function buildToggleItemsNoYes(containerId, items, stateKey, notesKey) {
           wrap.querySelectorAll('.t-btn').forEach(b => b.classList.remove('sel'));
           btn.classList.add('sel');
         }
+      if (typeof saveDraftToLocal === 'function') saveDraftToLocal();
       });
     });
 
@@ -770,7 +822,8 @@ function buildB5CoolingItems() {
             wrap.querySelectorAll('.nipple-btn').forEach(b => b.classList.remove('sel'));
             btn.classList.add('sel');
           }
-        });
+        if (typeof saveDraftToLocal === 'function') saveDraftToLocal();
+      });
       });
       const noteBtn = wrap.querySelector('.note-icon-btn');
       noteBtn?.addEventListener('click', () => {
@@ -827,6 +880,7 @@ function buildB5CoolingItems() {
           wrap.querySelectorAll('.t-btn').forEach(b => b.classList.remove('sel'));
           btn.classList.add('sel');
         }
+      if (typeof saveDraftToLocal === 'function') saveDraftToLocal();
       });
     });
 
@@ -854,6 +908,7 @@ function addB5Zone() {
   state.b5ZonesCount++;
   state.b5ZonesData.push({ inTemp: '', outTemp: '', flow: '', remark: '' });
   renderB5Zones();
+  if (typeof saveDraftToLocal === 'function') saveDraftToLocal();
 }
 
 function removeB5Zone() {
@@ -861,19 +916,20 @@ function removeB5Zone() {
     state.b5ZonesCount--;
     state.b5ZonesData.pop();
     renderB5Zones();
+    if (typeof saveDraftToLocal === 'function') saveDraftToLocal();
   }
 }
 
 function renderB5Zones() {
   const container = document.getElementById('b5_dynamicZones');
   if (!container) return;
-  
+
   if (state.b5ZonesData.length < state.b5ZonesCount) {
     for (let i = state.b5ZonesData.length; i < state.b5ZonesCount; i++) {
       state.b5ZonesData.push({ inTemp: '', outTemp: '', flow: '', remark: '' });
     }
   }
-  
+
   let html = '';
   for (let i = 0; i < state.b5ZonesCount; i++) {
     const d = state.b5ZonesData[i];
@@ -958,6 +1014,7 @@ function renderCavityList() {
           if (b.dataset.s === 'ng' && state.cavities[i].status === 'ng') b.classList.add('ng-sel');
           if (b.dataset.s === 'na' && state.cavities[i].status === 'na') b.classList.add('na-sel');
         });
+        if (typeof saveDraftToLocal === 'function') saveDraftToLocal();
       });
     });
 
@@ -1133,7 +1190,7 @@ function renderMouldRows(type) {
   const count = type === 'close' ? mouldCloseRows : mouldOpenRows;
   const label = type === 'close' ? 'CL' : 'OP';
   const labelTxt = type === 'close' ? 'CLOSE' : 'OPEN';
-  
+
   let html = `<tr class="pb-group-header">
                 <td colspan="3">
                   <div style="display: flex; align-items: center; gap: 8px; justify-content: flex-start;">
@@ -1143,7 +1200,7 @@ function renderMouldRows(type) {
                   </div>
                 </td>
               </tr>`;
-  
+
   for (let i = 1; i <= count; i++) {
     html += `<tr>
                 <td class="pb-td-label">${label} ${i}</td>
@@ -1171,7 +1228,7 @@ function initCoolingCanvas() {
   const canvas = document.getElementById('coolingCanvas');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
-  
+
   mainOffscreenCanvas = document.createElement('canvas');
   mainOffscreenCanvas.width = canvas.width;
   mainOffscreenCanvas.height = canvas.height;
@@ -1180,7 +1237,24 @@ function initCoolingCanvas() {
   offCtx.fillStyle = '#ffffff';
   offCtx.fillRect(0, 0, canvas.width, canvas.height);
 
-  window.loadSketchToCanvas = function(base64) {
+  window.saveCanvasDraft = function() {
+    try {
+      localStorage.setItem('mter_sketch_draft', canvas.toDataURL());
+    } catch (e) { console.error('Save sketch error:', e); }
+  };
+
+  const draftImgData = localStorage.getItem('mter_sketch_draft');
+  if (draftImgData) {
+    const draftImg = new Image();
+    draftImg.onload = () => {
+      offCtx.clearRect(0, 0, canvas.width, canvas.height);
+      offCtx.drawImage(draftImg, 0, 0);
+      redrawToScreen();
+    };
+    draftImg.src = draftImgData;
+  }
+
+  window.loadSketchToCanvas = function (base64) {
     const img = new Image();
     img.onload = () => {
       offCtx.clearRect(0, 0, canvas.width, canvas.height);
@@ -1191,7 +1265,7 @@ function initCoolingCanvas() {
     img.src = base64;
   };
 
-  window.getSketchBase64 = function() {
+  window.getSketchBase64 = function () {
     return mainOffscreenCanvas ? mainOffscreenCanvas.toDataURL('image/png') : '';
   };
 
@@ -1228,14 +1302,14 @@ function initCoolingCanvas() {
     }
     const logicalX = (cx - rect.left) * scaleX;
     const logicalY = (cy - rect.top) * scaleY;
-    
+
     return {
       x: (logicalX - canvasTransform.offsetX) / canvasTransform.scale,
       y: (logicalY - canvasTransform.offsetY) / canvasTransform.scale
     };
   }
 
-  function getTool() { 
+  function getTool() {
     const activeBtn = document.querySelector('.canvas-tool-btn.active');
     return activeBtn ? activeBtn.dataset.tool : 'pencil';
   }
@@ -1244,7 +1318,7 @@ function initCoolingCanvas() {
   function saveSnapshot() { canvasHistory.push(cloneOffscreen(mainOffscreenCanvas)); }
 
   let lastDist = 0;
-  let lastPan = {x: 0, y: 0};
+  let lastPan = { x: 0, y: 0 };
 
   function handleTouchStart(e) {
     if (e.touches.length === 2) {
@@ -1252,7 +1326,7 @@ function initCoolingCanvas() {
       canvasIsDrawing = false;
       canvasIsPanning = true;
       lastDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-      lastPan = { x: (e.touches[0].clientX + e.touches[1].clientX)/2, y: (e.touches[0].clientY + e.touches[1].clientY)/2 };
+      lastPan = { x: (e.touches[0].clientX + e.touches[1].clientX) / 2, y: (e.touches[0].clientY + e.touches[1].clientY) / 2 };
       return;
     }
     if (e.touches.length === 1 && !canvasIsPanning) {
@@ -1264,31 +1338,31 @@ function initCoolingCanvas() {
     if (e.touches.length === 2 && canvasIsPanning) {
       if (e.cancelable) e.preventDefault();
       const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-      const pan = { x: (e.touches[0].clientX + e.touches[1].clientX)/2, y: (e.touches[0].clientY + e.touches[1].clientY)/2 };
-      
+      const pan = { x: (e.touches[0].clientX + e.touches[1].clientX) / 2, y: (e.touches[0].clientY + e.touches[1].clientY) / 2 };
+
       if (lastDist > 0) {
         const zoomDelta = dist / lastDist;
         const oldScale = canvasTransform.scale;
         let newScale = oldScale * zoomDelta;
         newScale = Math.min(Math.max(0.5, newScale), 5);
-        
+
         const rect = canvas.getBoundingClientRect();
         const scaleX = canvas.width / rect.width;
         const scaleY = canvas.height / rect.height;
         const logicalCx = (pan.x - rect.left) * scaleX;
         const logicalCy = (pan.y - rect.top) * scaleY;
-        
+
         canvasTransform.offsetX = logicalCx - (logicalCx - canvasTransform.offsetX) * (newScale / oldScale);
         canvasTransform.offsetY = logicalCy - (logicalCy - canvasTransform.offsetY) * (newScale / oldScale);
         canvasTransform.scale = newScale;
       }
-      
+
       const rect = canvas.getBoundingClientRect();
       const scaleX = canvas.width / rect.width;
       const scaleY = canvas.height / rect.height;
       canvasTransform.offsetX += (pan.x - lastPan.x) * scaleX;
       canvasTransform.offsetY += (pan.y - lastPan.y) * scaleY;
-      
+
       lastDist = dist;
       lastPan = pan;
       redrawToScreen();
@@ -1315,13 +1389,13 @@ function initCoolingCanvas() {
     const zoomDelta = e.deltaY > 0 ? 0.9 : 1.1;
     let newScale = oldScale * zoomDelta;
     newScale = Math.min(Math.max(0.5, newScale), 5);
-    
+
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
     const logicalCx = (e.clientX - rect.left) * scaleX;
     const logicalCy = (e.clientY - rect.top) * scaleY;
-    
+
     canvasTransform.offsetX = logicalCx - (logicalCx - canvasTransform.offsetX) * (newScale / oldScale);
     canvasTransform.offsetY = logicalCy - (logicalCy - canvasTransform.offsetY) * (newScale / oldScale);
     canvasTransform.scale = newScale;
@@ -1348,7 +1422,7 @@ function initCoolingCanvas() {
     canvasStartY = pos.y;
     saveSnapshot();
     canvasSnapshot = cloneOffscreen(mainOffscreenCanvas);
-    
+
     setupCtx(offCtx);
     if (getTool() === 'pencil' || getTool() === 'eraser') {
       offCtx.beginPath();
@@ -1401,23 +1475,25 @@ function initCoolingCanvas() {
     }
     offCtx.globalCompositeOperation = 'source-over';
     redrawToScreen();
+    if (typeof saveCanvasDraft === 'function') saveCanvasDraft();
   }
 
-  canvas.addEventListener('mousedown',  startDraw);
-  canvas.addEventListener('mousemove',  draw);
-  canvas.addEventListener('mouseup',    endDraw);
+  canvas.addEventListener('mousedown', startDraw);
+  canvas.addEventListener('mousemove', draw);
+  canvas.addEventListener('mouseup', endDraw);
   canvas.addEventListener('mouseleave', endDraw);
-  
+
   canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
-  canvas.addEventListener('touchmove',  handleTouchMove,  { passive: false });
-  canvas.addEventListener('touchend',   handleTouchEnd,   { passive: false });
-  canvas.addEventListener('touchcancel',handleTouchEnd,   { passive: false });
+  canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+  canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
+  canvas.addEventListener('touchcancel', handleTouchEnd, { passive: false });
 
   document.getElementById('canvasUndo')?.addEventListener('click', () => {
     if (canvasHistory.length > 0) {
       offCtx.clearRect(0, 0, canvas.width, canvas.height);
       offCtx.drawImage(canvasHistory.pop(), 0, 0);
       redrawToScreen();
+      if (typeof saveCanvasDraft === 'function') saveCanvasDraft();
     } else {
       showToast('Tidak ada yang bisa di-undo.', 'info');
     }
@@ -1436,6 +1512,7 @@ function initCoolingCanvas() {
     offCtx.fillStyle = '#ffffff';
     offCtx.fillRect(0, 0, canvas.width, canvas.height);
     redrawToScreen();
+    if (typeof saveCanvasDraft === 'function') saveCanvasDraft();
     showToast('Canvas dikosongkan.', 'info');
   });
 
@@ -1444,7 +1521,7 @@ function initCoolingCanvas() {
     redrawToScreen();
   });
 
-  document.getElementById('canvasLineWidth')?.addEventListener('input', function() {
+  document.getElementById('canvasLineWidth')?.addEventListener('input', function () {
     const d = document.getElementById('canvasLineWidthDisplay');
     if (d) d.textContent = this.value;
   });
@@ -1452,13 +1529,13 @@ function initCoolingCanvas() {
   document.getElementById('saveSketchBtn')?.addEventListener('click', async () => {
     const key = getPBKey();
     if (!key) { showToast('Pilih Mesin, Mould, dan Material terlebih dahulu (di tab Parameter Bank)!', 'error'); return; }
-    
+
     showToast('Menyimpan sketsa...', 'info');
     try {
       const docRef = doc(db, "parameters", key);
       const docSnap = await getDoc(docRef);
       let pbData = docSnap.exists() ? docSnap.data() : {};
-      
+
       pbData.canvasSketch = mainOffscreenCanvas.toDataURL('image/png');
       await setDoc(docRef, pbData);
       showToast('Sketsa Cooling Layout berhasil disimpan!', 'success');
@@ -1474,20 +1551,20 @@ async function saveParamBank() {
   if (!key) { showToast('Pilih Mesin, Mould, dan Material terlebih dahulu!', 'error'); return; }
   const data = {};
   PB_FIELD_IDS.forEach(id => { const el = document.getElementById(id); data[id] = el ? el.value : ''; });
-  
+
   // Save dynamic rows
   data.mouldCloseRows = mouldCloseRows;
   data.mouldOpenRows = mouldOpenRows;
   data.mouldCloseData = [];
   data.mouldOpenData = [];
-  
+
   for (let i = 1; i <= mouldCloseRows; i++) {
     data.mouldCloseData.push({
       sp: document.getElementById(`pb_close_sp_${i}`)?.value || '',
       pos: document.getElementById(`pb_close_pos_${i}`)?.value || ''
     });
   }
-  
+
   for (let i = 1; i <= mouldOpenRows; i++) {
     data.mouldOpenData.push({
       sp: document.getElementById(`pb_open_sp_${i}`)?.value || '',
@@ -1497,7 +1574,7 @@ async function saveParamBank() {
 
   // Save B5 zones
   data.b5ZonesCount = state.b5ZonesCount;
-  data.b5ZonesData  = state.b5ZonesData;
+  data.b5ZonesData = state.b5ZonesData;
 
   // Save canvas sketch as Base64
   const canvas = document.getElementById('coolingCanvas');
@@ -1505,7 +1582,7 @@ async function saveParamBank() {
 
   showToast('Menyimpan parameter...', 'info');
   const btn = document.getElementById('pb_saveBtn');
-  if(btn) btn.disabled = true;
+  if (btn) btn.disabled = true;
   try {
     await setDoc(doc(db, "parameters", key), data);
     showToast('Parameter berhasil disimpan!', 'success');
@@ -1513,13 +1590,13 @@ async function saveParamBank() {
     console.error("Firebase saveParamBank Error:", e);
     showToast('Gagal menyimpan parameter.', 'error');
   }
-  if(btn) btn.disabled = false;
+  if (btn) btn.disabled = false;
 }
 
 async function loadParamBank() {
   const key = getPBKey();
   if (!key) { showToast('Pilih Mesin, Mould, dan Material terlebih dahulu!', 'error'); return; }
-  
+
   showToast('Memuat data parameter...', 'info');
   const btn = document.getElementById('pb_loadBtn');
   if (btn) btn.disabled = true;
@@ -1533,19 +1610,19 @@ async function loadParamBank() {
       if (btn) btn.disabled = false;
       return;
     }
-    
+
     const data = docSnap.data();
     PB_FIELD_IDS.forEach(id => { const el = document.getElementById(id); if (el && data[id] !== undefined) el.value = data[id]; });
-    
+
     // Load dynamic rows
     mouldCloseRows = data.mouldCloseRows || 3;
     mouldOpenRows = data.mouldOpenRows || 3;
     renderMouldRows('close');
     renderMouldRows('open');
-    
+
     if (data.mouldCloseData) {
       for (let i = 1; i <= mouldCloseRows; i++) {
-        const rowData = data.mouldCloseData[i-1];
+        const rowData = data.mouldCloseData[i - 1];
         if (rowData) {
           const spEl = document.getElementById(`pb_close_sp_${i}`);
           const posEl = document.getElementById(`pb_close_pos_${i}`);
@@ -1554,10 +1631,10 @@ async function loadParamBank() {
         }
       }
     }
-    
+
     if (data.mouldOpenData) {
       for (let i = 1; i <= mouldOpenRows; i++) {
-        const rowData = data.mouldOpenData[i-1];
+        const rowData = data.mouldOpenData[i - 1];
         if (rowData) {
           const spEl = document.getElementById(`pb_open_sp_${i}`);
           const posEl = document.getElementById(`pb_open_pos_${i}`);
@@ -1570,7 +1647,7 @@ async function loadParamBank() {
     // Load B5 zones
     if (data.b5ZonesData) {
       state.b5ZonesCount = data.b5ZonesCount || 4;
-      state.b5ZonesData  = data.b5ZonesData;
+      state.b5ZonesData = data.b5ZonesData;
       renderB5Zones();
     }
 
@@ -1582,7 +1659,7 @@ async function loadParamBank() {
     showToast('Parameter berhasil dimuat!', 'success');
   } catch (e) {
     console.error("Firebase loadParamBank Error:", e);
-    showToast('Gagal membaca data parameter.', 'error'); 
+    showToast('Gagal membaca data parameter.', 'error');
   }
   if (btn) btn.disabled = false;
 }
@@ -1608,7 +1685,7 @@ function showToast(msg, type = 'info') {
 async function saveChecksheet() {
   const v = id => document.getElementById(id)?.value || '-';
   showToast('Menyimpan laporan ke Cloud...', 'info');
-  
+
   const reportData = {
     date: document.getElementById('hi_date')?.value || new Date().toISOString().split('T')[0],
     trialNumber: document.getElementById('hi_trialNumber')?.value || '',
@@ -1619,9 +1696,18 @@ async function saveChecksheet() {
     judgment: state.moldStatus || 'N/A',
     createdAt: new Date().toISOString()
   };
-  
+
   try {
     await addDoc(collection(db, "reports"), reportData);
+    localStorage.removeItem('mter_draft');
+    
+    Object.keys(localStorage).forEach(key => {
+      if (key.startsWith('mter-saved-')) {
+        localStorage.removeItem(key);
+      }
+    });
+    state.saved = {};
+    
     showToast('Laporan berhasil disimpan ke Cloud!', 'success');
   } catch (e) {
     console.error("Firebase saveChecksheet Error:", e);
@@ -1632,8 +1718,8 @@ async function saveChecksheet() {
 // ----------------------------------------------------------------
 // EXPORT PDF — Full Report
 // ----------------------------------------------------------------
-function exportReport() {
-  showToast('Menyiapkan PDF...', 'info');
+function exportReport(action = 'download') {
+  showToast(action === 'view' ? 'Menyiapkan pratinjau PDF...' : 'Menyiapkan PDF...', 'info');
   const el = document.getElementById('printLayout');
   if (!el) return;
 
@@ -1661,7 +1747,7 @@ function exportReport() {
       const n = notesObj[i] || {};
       const notes = [n.action ? `Action: ${n.action}` : '', n.result ? `Result: ${n.result}` : '', n.remark ? `Remark: ${n.remark}` : ''].filter(Boolean).join(' | ');
       return `<tr>
-        <td style="width:32px;text-align:center;color:#6b7280;">${i+1}</td>
+        <td style="width:32px;text-align:center;color:#6b7280;">${i + 1}</td>
         <td>${item}</td>
         <td style="text-align:center;">${badge(s)}</td>
         <td style="color:#6b7280;font-size:.8rem;">${notes || '-'}</td>
@@ -1676,7 +1762,7 @@ function exportReport() {
       const n = notesObj[i] || {};
       const notes = [n.action ? `Action: ${n.action}` : '', n.result ? `Result: ${n.result}` : '', n.remark ? `Remark: ${n.remark}` : ''].filter(Boolean).join(' | ');
       return `<tr>
-        <td style="width:32px;text-align:center;color:#6b7280;">${i+1}</td>
+        <td style="width:32px;text-align:center;color:#6b7280;">${i + 1}</td>
         <td>${item}</td>
         <td style="text-align:center;">${badge(s)}</td>
         <td style="color:#6b7280;font-size:.8rem;">${notes || '-'}</td>
@@ -1686,20 +1772,20 @@ function exportReport() {
 
   // Mould Close / Open rows
   const closeRows = Array.from({ length: mouldCloseRows }, (_, i) => {
-    const sp  = document.getElementById(`pb_close_sp_${i+1}`)?.value || '-';
-    const pos = document.getElementById(`pb_close_pos_${i+1}`)?.value || '-';
-    return `<tr><td>CL ${i+1}</td><td>${sp}</td><td>${pos}</td></tr>`;
+    const sp = document.getElementById(`pb_close_sp_${i + 1}`)?.value || '-';
+    const pos = document.getElementById(`pb_close_pos_${i + 1}`)?.value || '-';
+    return `<tr><td>CL ${i + 1}</td><td>${sp}</td><td>${pos}</td></tr>`;
   }).join('');
   const openRows = Array.from({ length: mouldOpenRows }, (_, i) => {
-    const sp  = document.getElementById(`pb_open_sp_${i+1}`)?.value || '-';
-    const pos = document.getElementById(`pb_open_pos_${i+1}`)?.value || '-';
-    return `<tr><td>OP ${i+1}</td><td>${sp}</td><td>${pos}</td></tr>`;
+    const sp = document.getElementById(`pb_open_sp_${i + 1}`)?.value || '-';
+    const pos = document.getElementById(`pb_open_pos_${i + 1}`)?.value || '-';
+    return `<tr><td>OP ${i + 1}</td><td>${sp}</td><td>${pos}</td></tr>`;
   }).join('');
 
   // B5 Cooling Zone rows
   const b5ZoneRows = state.b5ZonesData.slice(0, state.b5ZonesCount).map((z, i) => `
     <tr>
-      <td>Zona ${i+1}</td>
+      <td>Zona ${i + 1}</td>
       <td>${z.inTemp || '-'}</td>
       <td>${z.outTemp || '-'}</td>
       <td>${z.flow || '-'}</td>
@@ -1709,9 +1795,9 @@ function exportReport() {
   // Cavity rows
   const cavityRows = state.cavities.map((cav, i) => {
     const statusLabel = cav.status === 'ok' ? `<span style="background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:4px;font-weight:700;">OK</span>` :
-                        cav.status === 'ng' ? `<span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:4px;font-weight:700;">NG</span>` : '-';
+      cav.status === 'ng' ? `<span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:4px;font-weight:700;">NG</span>` : '-';
     return `<tr>
-      <td style="text-align:center;">C${i+1}</td>
+      <td style="text-align:center;">C${i + 1}</td>
       <td style="text-align:center;">${statusLabel}</td>
       <td>${cav.action || '-'}</td>
       <td>${cav.result || '-'}</td>
@@ -1720,7 +1806,7 @@ function exportReport() {
   }).join('');
 
   const sec = (title) => `<div class="print-sec-title">${title}</div>`;
-  const tblHead = (...cols) => `<thead><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead>`;
+  const tblHead = (...cols) => `<thead><tr>${cols.map(c => `<th>${c}</th>`).join('')}</tr></thead>`;
 
   el.innerHTML = `<div class="print-page">
     <!-- HEADER -->
@@ -1738,7 +1824,7 @@ function exportReport() {
     <!-- HEADER INFORMASI -->
     <div class="print-section-wrap">
       ${sec('Header Informasi')}
-      <table class="print-table">${tblHead('Field','Value')}<tbody>
+      <table class="print-table">${tblHead('Field', 'Value')}<tbody>
         <tr><td class="pb-td-label">Trial Number</td><td>${v('hi_trialNumber')}</td></tr>
         <tr><td class="pb-td-label">Date</td><td>${v('hi_date')}</td></tr>
         <tr><td class="pb-td-label">Prepared</td><td>${v('hi_prepared')}</td></tr>
@@ -1758,7 +1844,7 @@ function exportReport() {
     <!-- PARAMETER BANK -->
     <div class="print-section-wrap">
       ${sec('Parameter Bank — General Information')}
-      <table class="print-table">${tblHead('Field','Value')}<tbody>
+      <table class="print-table">${tblHead('Field', 'Value')}<tbody>
         <tr><td class="pb-td-label">Tanggal</td><td>${v('pb_tanggal')}</td></tr>
         <tr><td class="pb-td-label">Mesin</td><td>${v('pb_machine') === 'Lainnya' ? v('pb_machine_custom') : v('pb_machine')}</td></tr>
         <tr><td class="pb-td-label">Nama Mould</td><td>${v('pb_mould')}</td></tr>
@@ -1772,7 +1858,7 @@ function exportReport() {
       </tbody></table>
 
       ${sec('Temperatur & Heater (°C)')}
-      <table class="print-table">${tblHead('Parameter','Nilai')}<tbody>
+      <table class="print-table">${tblHead('Parameter', 'Nilai')}<tbody>
         <tr><td>Nozzle</td><td>${v('pb_nozzle')}</td></tr>
         <tr><td>Front</td><td>${v('pb_front')}</td></tr>
         <tr><td>Middle</td><td>${v('pb_middle')}</td></tr>
@@ -1787,24 +1873,24 @@ function exportReport() {
 
       ${sec('Injection Data (Stage 1–7)')}
       <table class="print-table">
-        ${tblHead('Stage','V (mm/s)','P (bar)','LS (mm)')}
-        <tbody>${[1,2,3,4,5,6,7].map(s=>`<tr>
+        ${tblHead('Stage', 'V (mm/s)', 'P (bar)', 'LS (mm)')}
+        <tbody>${[1, 2, 3, 4, 5, 6, 7].map(s => `<tr>
           <td style="text-align:center;">${s}</td>
-          <td>${v('pb_v'+s)}</td><td>${v('pb_p'+s)}</td><td>${v('pb_ls'+s)}</td>
+          <td>${v('pb_v' + s)}</td><td>${v('pb_p' + s)}</td><td>${v('pb_ls' + s)}</td>
         </tr>`).join('')}</tbody>
       </table>
 
       ${sec('Holding Pressure')}
       <table class="print-table">
-        ${tblHead('Stage','P (bar)','T (s)')}
-        <tbody>${[5,4,3,2,1].map(s=>`<tr>
+        ${tblHead('Stage', 'P (bar)', 'T (s)')}
+        <tbody>${[5, 4, 3, 2, 1].map(s => `<tr>
           <td style="text-align:center;">P${s}</td>
-          <td>${v('pb_hold_p'+s)}</td><td>${v('pb_hold_t'+s)}</td>
+          <td>${v('pb_hold_p' + s)}</td><td>${v('pb_hold_t' + s)}</td>
         </tr>`).join('')}</tbody>
       </table>
 
       ${sec('Plastifikasi & Melt Decomp')}
-      <table class="print-table">${tblHead('Parameter','Nilai')}<tbody>
+      <table class="print-table">${tblHead('Parameter', 'Nilai')}<tbody>
         <tr><td>Screw Speed</td><td>${v('pb_screwSpeed')} rpm</td></tr>
         <tr><td>Back Pressure</td><td>${v('pb_backPress')} bar</td></tr>
         <tr><td>Dosing Position</td><td>${v('pb_dosingPos')} mm</td></tr>
@@ -1813,7 +1899,7 @@ function exportReport() {
       </tbody></table>
 
       ${sec('Ejector')}
-      <table class="print-table">${tblHead('Parameter','Nilai')}<tbody>
+      <table class="print-table">${tblHead('Parameter', 'Nilai')}<tbody>
         <tr><td>Knock Out No</td><td>${v('pb_ej_ko')}</td></tr>
         <tr><td>Semi-Auto</td><td>${v('pb_ej_semi')}</td></tr>
         <tr><td>Standard</td><td>${v('pb_ej_std')}</td></tr>
@@ -1821,7 +1907,7 @@ function exportReport() {
       </tbody></table>
 
       ${sec('Cycle Time & Timing')}
-      <table class="print-table">${tblHead('Parameter','Nilai')}<tbody>
+      <table class="print-table">${tblHead('Parameter', 'Nilai')}<tbody>
         <tr><td>Cooling Time</td><td>${v('pb_coolingTime')} s</td></tr>
         <tr><td>Cure Time</td><td>${v('pb_cureTime')} s</td></tr>
         <tr><td>Injection Time</td><td>${v('pb_injTime')} s</td></tr>
@@ -1832,7 +1918,7 @@ function exportReport() {
     <!-- MOULD CLOSE / OPEN -->
     <div class="print-section-wrap">
       ${sec('Mould Close / Open')}
-      <table class="print-table">${tblHead('Step','SP','Position')}<tbody>
+      <table class="print-table">${tblHead('Step', 'SP', 'Position')}<tbody>
         ${closeRows}${openRows}
       </tbody></table>
     </div>
@@ -1840,7 +1926,7 @@ function exportReport() {
     <!-- COOLING CHANNEL ZONES -->
     <div class="print-section-wrap">
       ${sec('Cooling Channel Zones')}
-      <table class="print-table">${tblHead('Zona','IN Temp (°C)','OUT Temp (°C)','Flow (L/min)','Remark')}<tbody>
+      <table class="print-table">${tblHead('Zona', 'IN Temp (°C)', 'OUT Temp (°C)', 'Flow (L/min)', 'Remark')}<tbody>
         ${b5ZoneRows || '<tr><td colspan="5" style="text-align:center;color:#9ca3af;">Tidak ada data zona.</td></tr>'}
       </tbody></table>
     </div>
@@ -1854,43 +1940,43 @@ function exportReport() {
     <!-- MTER CHECKSHEET B.1–B.9 -->
     <div class="print-section-wrap">
       ${sec('B.1 — Opening Mechanism')}
-      <table class="print-table">${tblHead('#','Item','Status','Notes')}<tbody>${buildToggleRows(B1_OPENING, state.b1, state.b1Notes)}</tbody></table>
+      <table class="print-table">${tblHead('#', 'Item', 'Status', 'Notes')}<tbody>${buildToggleRows(B1_OPENING, state.b1, state.b1Notes)}</tbody></table>
 
       ${sec('B.2 — Slider Mechanism')}
-      <table class="print-table">${tblHead('#','Item','Status','Notes')}<tbody>${buildToggleRows(B2_SLIDER, state.b2, state.b2Notes)}</tbody></table>
+      <table class="print-table">${tblHead('#', 'Item', 'Status', 'Notes')}<tbody>${buildToggleRows(B2_SLIDER, state.b2, state.b2Notes)}</tbody></table>
 
       ${sec('B.3 — Ejector Mechanism')}
-      <table class="print-table">${tblHead('#','Item','Status','Notes')}<tbody>${buildToggleRows(B3_EJECTOR, state.b3, state.b3Notes)}</tbody></table>
+      <table class="print-table">${tblHead('#', 'Item', 'Status', 'Notes')}<tbody>${buildToggleRows(B3_EJECTOR, state.b3, state.b3Notes)}</tbody></table>
 
       ${sec('B.4 — Hydraulic System')}
-      <table class="print-table">${tblHead('#','Item','Status','Notes')}<tbody>${buildToggleRows(B4_HYDRAULIC, state.b4, state.b4Notes)}</tbody></table>
+      <table class="print-table">${tblHead('#', 'Item', 'Status', 'Notes')}<tbody>${buildToggleRows(B4_HYDRAULIC, state.b4, state.b4Notes)}</tbody></table>
 
       ${sec('B.5 — Cooling System')}
-      <table class="print-table">${tblHead('#','Item','Status','Notes')}<tbody>${buildToggleRows(B5_COOLING, state.b5, state.b5Notes)}</tbody></table>
+      <table class="print-table">${tblHead('#', 'Item', 'Status', 'Notes')}<tbody>${buildToggleRows(B5_COOLING, state.b5, state.b5Notes)}</tbody></table>
 
       ${sec('B.6 — Hot Runner System')}
-      <table class="print-table">${tblHead('#','Item','Status','Notes')}<tbody>${buildToggleRows(B6_HOTRUNNER, state.b6, state.b6Notes)}</tbody></table>
+      <table class="print-table">${tblHead('#', 'Item', 'Status', 'Notes')}<tbody>${buildToggleRows(B6_HOTRUNNER, state.b6, state.b6Notes)}</tbody></table>
 
       ${sec('B.7 — Unscrewing')}
-      <table class="print-table">${tblHead('#','Item','Status','Notes')}<tbody>${buildToggleRows(B7_UNSCREWING, state.b7, state.b7Notes)}</tbody></table>
+      <table class="print-table">${tblHead('#', 'Item', 'Status', 'Notes')}<tbody>${buildToggleRows(B7_UNSCREWING, state.b7, state.b7Notes)}</tbody></table>
 
       ${sec('B.8 — Take-Out Robot')}
-      <table class="print-table">${tblHead('#','Item','Status','Notes')}<tbody>${buildToggleRows(B8_TAKEOUT, state.b8, state.b8Notes)}</tbody></table>
+      <table class="print-table">${tblHead('#', 'Item', 'Status', 'Notes')}<tbody>${buildToggleRows(B8_TAKEOUT, state.b8, state.b8Notes)}</tbody></table>
 
       ${sec('B.9 — Balancing')}
-      <table class="print-table">${tblHead('#','Item','Status','Notes')}<tbody>${buildToggleRows(B9_BALANCING, state.b9, state.b9Notes)}</tbody></table>
+      <table class="print-table">${tblHead('#', 'Item', 'Status', 'Notes')}<tbody>${buildToggleRows(B9_BALANCING, state.b9, state.b9Notes)}</tbody></table>
 
       ${sec('C — Demoulding')}
-      <table class="print-table">${tblHead('#','Item','Status','Notes')}<tbody>${buildToggleRowsNY(C_DEMOULDING, state.c, state.cNotes)}</tbody></table>
+      <table class="print-table">${tblHead('#', 'Item', 'Status', 'Notes')}<tbody>${buildToggleRowsNY(C_DEMOULDING, state.c, state.cNotes)}</tbody></table>
 
       ${sec('D — Aesthetic Inspection')}
-      <table class="print-table">${tblHead('#','Item','Status','Notes')}<tbody>${buildToggleRows(D_AESTHETIC, state.d, state.dNotes)}</tbody></table>
+      <table class="print-table">${tblHead('#', 'Item', 'Status', 'Notes')}<tbody>${buildToggleRows(D_AESTHETIC, state.d, state.dNotes)}</tbody></table>
     </div>
 
     <!-- CAVITY LAYOUT -->
     <div class="print-section-wrap">
       ${sec('Cavity Layout')}
-      <table class="print-table">${tblHead('Cavity','Status','Action','Result','Remark')}<tbody>
+      <table class="print-table">${tblHead('Cavity', 'Status', 'Action', 'Result', 'Remark')}<tbody>
         ${cavityRows}
       </tbody></table>
     </div>
@@ -1898,7 +1984,7 @@ function exportReport() {
     <!-- CONCLUSION (F) -->
     <div class="print-section-wrap">
       ${sec('F — Conclusion & Recommendation')}
-      <table class="print-table">${tblHead('Kategori','Keterangan')}<tbody>
+      <table class="print-table">${tblHead('Kategori', 'Keterangan')}<tbody>
         <tr><td class="pb-td-label">Produk</td><td>${document.getElementById('f_produk')?.value || '-'}</td></tr>
         <tr><td class="pb-td-label">Mesin</td><td>${document.getElementById('f_mesin')?.value || '-'}</td></tr>
         <tr><td class="pb-td-label">Mold</td><td>${document.getElementById('f_mold')?.value || '-'}</td></tr>
@@ -1922,8 +2008,27 @@ function exportReport() {
     image: { type: 'jpeg', quality: .97 },
     html2canvas: { scale: 2, useCORS: true, logging: false },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-  }).from(el).save().then(() => { el.style.display = 'none'; showToast('PDF berhasil diunduh!', 'success'); });
+  });
+  
+  if (action === 'view') {
+    pdf.from(el).outputPdf('bloburl').then((pdfUrl) => { 
+      el.style.display = 'none'; 
+      window.open(pdfUrl, '_blank');
+      showToast('PDF berhasil dibuka di tab baru.', 'success'); 
+    }).catch((err) => {
+      el.style.display = 'none';
+      console.error("Error generating PDF view:", err);
+      showToast('Gagal memuat pratinjau PDF', 'error');
+    });
+  } else {
+    pdf.from(el).save().then(() => { 
+      el.style.display = 'none'; 
+      showToast('PDF berhasil diunduh!', 'success'); 
+    });
+  }
 }
+
+window.viewReportPDF = () => exportReport('view');
 
 // ----------------------------------------------------------------
 // (openSidebar / closeSidebar removed — sidebar has been eliminated)
@@ -1939,10 +2044,10 @@ async function renderAnalyticsDashboard() {
     showToast('Library Chart.js belum siap.', 'error');
     return;
   }
-  
+
   const chartContainers = document.querySelectorAll('.chart-wrapper');
   chartContainers.forEach(c => c.style.opacity = '0.5'); // visual loading
-  
+
   let saved = [];
   try {
     const querySnapshot = await getDocs(collection(db, "reports"));
@@ -1956,7 +2061,7 @@ async function renderAnalyticsDashboard() {
     return;
   }
   chartContainers.forEach(c => c.style.opacity = '1');
-  
+
   // Update Machine Filter Dropdown
   const machineSelect = document.getElementById('analyticsMachine');
   const startDateInput = document.getElementById('analyticsStartDate');
@@ -1976,34 +2081,34 @@ async function renderAnalyticsDashboard() {
   const machine = machineSelect ? machineSelect.value : 'all';
 
   let filtered = saved;
-  
+
   // Filter By Machine
   if (machine !== 'all') {
     filtered = filtered.filter(r => r.machine === machine);
   }
-  
+
   // Filter By Date Range
   if (startDate || endDate) {
     filtered = filtered.filter(r => {
       if (!r.date) return false;
       const rDate = new Date(r.date);
       // Remove time for accurate day comparison
-      rDate.setHours(0,0,0,0);
-      
+      rDate.setHours(0, 0, 0, 0);
+
       let passStart = true;
       let passEnd = true;
-      
+
       if (startDate) {
         const sDate = new Date(startDate);
-        sDate.setHours(0,0,0,0);
+        sDate.setHours(0, 0, 0, 0);
         if (rDate < sDate) passStart = false;
       }
       if (endDate) {
         const eDate = new Date(endDate);
-        eDate.setHours(0,0,0,0);
+        eDate.setHours(0, 0, 0, 0);
         if (rDate > eDate) passEnd = false;
       }
-      
+
       return passStart && passEnd;
     });
   }
@@ -2013,13 +2118,13 @@ async function renderAnalyticsDashboard() {
   const approved = filtered.filter(r => r.judgment === 'APPROVED').length;
   const conditional = filtered.filter(r => r.judgment === 'CONDITIONAL').length;
   const rejected = filtered.filter(r => r.judgment === 'REJECTED').length;
-  
+
   const approvedRate = totalTrial > 0 ? Math.round((approved / totalTrial) * 100) : 0;
-  
+
   const kpiTotalEl = document.getElementById('kpiTotalTrial');
   const kpiAppEl = document.getElementById('kpiApprovedRate');
   const kpiDefEl = document.getElementById('kpiTotalDefect');
-  
+
   if (kpiTotalEl) kpiTotalEl.textContent = totalTrial;
   if (kpiAppEl) kpiAppEl.textContent = approvedRate + '%';
   if (kpiDefEl) kpiDefEl.textContent = rejected;
@@ -2055,7 +2160,7 @@ async function renderAnalyticsDashboard() {
   const ctxTrend = document.getElementById('trendChart')?.getContext('2d');
   if (ctxTrend) {
     if (trendChartInstance) trendChartInstance.destroy();
-    
+
     // Group by Date for simple trend (with null/invalid date guard)
     const trendMap = {};
     filtered.forEach(r => {
@@ -2067,7 +2172,7 @@ async function renderAnalyticsDashboard() {
       trendMap[d].total++;
       if (r.judgment === 'REJECTED') trendMap[d].ng++;
     });
-    
+
     const labels = Object.keys(trendMap).sort();
     const dataTotal = labels.map(l => trendMap[l].total);
     const dataNG = labels.map(l => trendMap[l].ng);
@@ -2109,9 +2214,59 @@ async function renderAnalyticsDashboard() {
 }
 
 // ----------------------------------------------------------------
+// AUTO-SAVE DRAFT LOCAL STORAGE
+// ----------------------------------------------------------------
+function saveDraftToLocal() {
+  const inputs = document.querySelectorAll('input[id], select[id], textarea[id]');
+  const draftData = { formData: {}, state: JSON.parse(JSON.stringify(state)) };
+  inputs.forEach(el => {
+    if (el.id && (el.id.startsWith('hi_') || el.id.startsWith('a_') || el.id.startsWith('pb_') || el.id.startsWith('f_'))) {
+      if (el.type === 'checkbox' || el.type === 'radio') draftData.formData[el.id] = el.checked;
+      else draftData.formData[el.id] = el.value;
+    }
+  });
+  localStorage.setItem('mter_draft', JSON.stringify(draftData));
+}
+
+function loadDraftFromLocal() {
+  const saved = localStorage.getItem('mter_draft');
+  if (!saved) return;
+  try {
+    const draftData = JSON.parse(saved);
+    if (draftData.state) Object.assign(state, draftData.state);
+    if (draftData.formData) {
+      for (const [id, val] of Object.entries(draftData.formData)) {
+        const el = document.getElementById(id);
+        if (el) {
+          if (el.type === 'checkbox' || el.type === 'radio') el.checked = val;
+          else el.value = val;
+        }
+      }
+    }
+    // Re-render UI based on loaded state
+    buildToggleItems('b1_openingItems', B1_OPENING, 'b1', 'b1Notes');
+    buildToggleItems('b2_sliderItems', B2_SLIDER, 'b2', 'b2Notes');
+    buildToggleItems('b3_ejectorItems', B3_EJECTOR, 'b3', 'b3Notes');
+    buildToggleItems('b4_hydraulicItems', B4_HYDRAULIC, 'b4', 'b4Notes');
+    buildB5CoolingItems();
+    buildToggleItems('b6_hotrunnerItems', B6_HOTRUNNER, 'b6', 'b6Notes');
+    buildToggleItems('b7_unscrewingItems', B7_UNSCREWING, 'b7', 'b7Notes');
+    buildToggleItems('b8_takeoutItems', B8_TAKEOUT, 'b8', 'b8Notes');
+    buildToggleItems('b9_balancingItems', B9_BALANCING, 'b9', 'b9Notes');
+    buildToggleItemsNoYes('c_demouldingItems', C_DEMOULDING, 'c', 'cNotes');
+    buildToggleItems('d_aestheticItems', D_AESTHETIC, 'd', 'dNotes');
+  } catch (e) {
+    console.error('Error loading draft:', e);
+  }
+}
+
+// ----------------------------------------------------------------
 // INIT
 // ----------------------------------------------------------------
 function init() {
+  document.addEventListener('input', saveDraftToLocal);
+  document.addEventListener('change', saveDraftToLocal);
+
   const today = new Date().toISOString().split('T')[0];
   const dateEl = document.getElementById('hi_date');
   if (dateEl) dateEl.value = today;
@@ -2137,15 +2292,22 @@ function init() {
     }
   });
 
+  loadDraftFromLocal();
   renderCavityList();
   renderB5Zones();
   document.getElementById('cavAddBtn')?.addEventListener('click', () => {
     state.cavities.push({ status: '', action: '', result: '', remark: '' });
     state.cavityCount = state.cavities.length;
     renderCavityList();
+    if (typeof saveDraftToLocal === 'function') saveDraftToLocal();
   });
   document.getElementById('cavRemoveBtn')?.addEventListener('click', () => {
-    if (state.cavities.length > 1) { state.cavities.pop(); state.cavityCount = state.cavities.length; renderCavityList(); }
+    if (state.cavities.length > 1) { 
+      state.cavities.pop(); 
+      state.cavityCount = state.cavities.length; 
+      renderCavityList(); 
+      if (typeof saveDraftToLocal === 'function') saveDraftToLocal();
+    }
     else showToast('Minimal 1 cavity harus ada.', 'info');
   });
 
@@ -2176,7 +2338,7 @@ function init() {
     if (dp) dp.value = '';
     showToast('Filter direset.', 'info');
   });
-  
+
   document.getElementById('analyticsFilterBtn')?.addEventListener('click', () => {
     renderAnalyticsDashboard();
     showToast('Filter diterapkan.', 'success');
@@ -2200,7 +2362,7 @@ function init() {
   const savedMode = sessionStorage.getItem('currentMode');
   const savedPanel = sessionStorage.getItem('activePanelId');
   if (savedPanel) activePanelId = savedPanel;
-  
+
   if (savedMode) {
     switchMode(savedMode, false);
   } else {
@@ -2211,19 +2373,102 @@ function init() {
 }
 
 // ----------------------------------------------------------------
-// GLOBAL SCOPE EXPOSURE
-// Fungsi-fungsi ini dipanggil melalui inline handler (onclick="...")
-// di HTML. Karena script ini berjalan sebagai ES6 Module, semua
-// identifier terisolasi dalam module scope — harus di-bind ke
-// window agar browser dapat menemukannya dari luar modul.
+// AUTHENTICATION LOGIC
 // ----------------------------------------------------------------
-window.switchMode      = switchMode;
-window.showPanel       = showPanel;
-window.exportReport    = exportReport;
-window.addB5Zone       = addB5Zone;
-window.removeB5Zone    = removeB5Zone;
-window.pbAddMouldRow   = pbAddMouldRow;
-window.pbRemoveMouldRow= pbRemoveMouldRow;
-window.showToast       = showToast;
+function getGreeting() {
+  const hour = new Date().getHours();
+  if (hour < 11) return 'Selamat Pagi!';
+  if (hour < 15) return 'Selamat Siang!';
+  if (hour < 18) return 'Selamat Sore!';
+  return 'Selamat Malam!';
+}
+
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    const greetingEl = document.getElementById('userGreeting');
+    if (greetingEl) greetingEl.textContent = getGreeting();
+    
+    const emailEl = document.getElementById('userEmailDisplay');
+    if (emailEl) emailEl.textContent = user.email || '';
+
+    // If we are currently showing loginMode, switch to home
+    if (document.getElementById('loginMode').style.display === 'flex') {
+      document.getElementById('loginMode').style.display = 'none';
+      switchMode('home', false);
+    }
+  } else {
+    // Hide all modes except homeMode to allow overlay effect
+    const homeEl = document.getElementById('homeMode');
+    if (homeEl) homeEl.style.display = 'block';
+    
+    const modes = [
+      'mterMode', 'mterMenuMode', 'paramBankMode',
+      'paramBankMenuMode', 'coolingSketchMode', 'reportHistoryMode',
+      'reportMenuMode', 'analyticsMode'
+    ];
+    modes.forEach(m => {
+      const el = document.getElementById(m);
+      if (el) el.style.display = 'none';
+    });
+    const loginEl = document.getElementById('loginMode');
+    if (loginEl) loginEl.style.display = 'flex';
+  }
+});
+
+window.togglePasswordVisibility = function() {
+  const passInput = document.getElementById('loginPassword');
+  if (passInput) {
+    passInput.type = passInput.type === 'password' ? 'text' : 'password';
+  }
+};
+
+async function handleLogin() {
+  const email = document.getElementById('loginEmail').value;
+  const pass = document.getElementById('loginPassword').value;
+  const remember = document.getElementById('loginRemember').checked;
+
+  if (!email || !pass) {
+    showToast('Harap masukkan email dan password.', 'error');
+    return;
+  }
+
+  try {
+    const persistenceType = remember ? browserLocalPersistence : browserSessionPersistence;
+    await setPersistence(auth, persistenceType);
+    await signInWithEmailAndPassword(auth, email, pass);
+    showToast('Berhasil masuk!', 'success');
+    switchMode('home');
+  } catch (error) {
+    console.error('Login error:', error);
+    showToast('Gagal masuk. Coba periksa kembali.', 'error');
+  }
+}
+
+async function handleLogout() {
+  if (confirm("Apakah Anda yakin ingin keluar dari sistem?")) {
+    try {
+      await signOut(auth);
+      showToast('Anda telah keluar.', 'info');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  }
+}
+
+// ----------------------------------------------------------------
+// GLOBAL SCOPE EXPOSURE
+// ----------------------------------------------------------------
+window.switchMode = switchMode;
+window.showPanel = showPanel;
+window.exportReport = exportReport;
+window.addB5Zone = addB5Zone;
+window.removeB5Zone = removeB5Zone;
+window.pbAddMouldRow = pbAddMouldRow;
+window.pbRemoveMouldRow = pbRemoveMouldRow;
+window.showToast = showToast;
+window.handleLogin = handleLogin;
+window.handleLogout = handleLogout;
 
 document.addEventListener('DOMContentLoaded', init);
+
+

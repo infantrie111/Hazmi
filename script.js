@@ -1,322 +1,498 @@
 // ================================================================
-// MTER Smart Checksheet v4.0 — script.js
-// Design: Shadcn UI Light Mode | Logic: MTER Checksheet + Parameter Bank
+// MTER Smart Checksheet v5.0 - script.js
 // ================================================================
 
-// ================================================================
-// DATA DEFINITIONS
-// ================================================================
-const MOLD_MECH_ITEMS = [
-  'Guide Pin & Guide Bush',
-  'Locking Block / Interlock',
-  'Slide Core Movement',
-  'Ejector Pin & Ejector Plate',
-  'Return Pin',
-  'Angular Pin / Lifter',
-  'Sprue Bush Condition',
-  'Runner System',
-  'Gate Condition',
-  'Parting Line Fitting',
-  'Venting / Gas Vent',
-  'Mold Base Condition',
-  'Bolting & Clamping',
-  'Locating Ring Alignment',
-  'Hot Runner System (if any)',
-  'Hydraulic Cylinder (if any)',
-  'Cooling Nipples Condition'
+// ----------------------------------------------------------------
+// DATA
+// ----------------------------------------------------------------
+
+// B.1 Opening Mechanism (14 items)
+const B1_OPENING = [
+  'Opening Step',
+  'Side Lock',
+  'Parting Lock',
+  'Puller Plate',
+  'Shoulder Bolt',
+  'Puller Chain',
+  'Limit Switch',
+  'Rack & Pinion',
+  'Gear',
+  'Runner Lock Pin',
+  'Side Straight Block Set',
+  'Special Guide Bush',
+  'Shot Counter',
+  'Need Work Instruction'
 ];
 
-const DEMOULDING_ITEMS = [
-  'Part sticking on Core side',
-  'Part sticking on Cavity side',
-  'Part sticking on Slide',
-  'Ejector mark / Push mark',
-  'Ejector pin interference',
-  'Undercut issue',
-  'Drag mark saat eject',
-  'Part jatuh tidak sempurna',
-  'Gate vestige / Gate break issue',
-  'Cycle time terlalu lama karena eject'
+// B.2 Slider Mechanism (7 items)
+const B2_SLIDER = [
+  'Slide Core',
+  'Guide Rails Hardness',
+  'Spring',
+  'Ball Plunger',
+  'Slide Stopper',
+  'Angular Pins',
+  'Locking Blocks / Wedge'
 ];
 
-const AESTHETIC_ITEMS = [
-  'Short Shot',
-  'Flash / Burr',
-  'Sink Mark',
+// B.3 Ejector Mechanism (12 items)
+const B3_EJECTOR = [
+  'Pin',
+  'Blade',
+  'Sleeve',
+  'Lifter / Angular',
+  'Disc',
+  'Plate',
+  'Bar',
+  'Double Ejection',
+  'Air Blow',
+  'Guide Pin / Bush',
+  'Spring',
+  'Distance Spacer'
+];
+
+// B.4 Hydraulic System (3 items)
+const B4_HYDRAULIC = [
+  'Unscrewing',
+  'Ejector Movement',
+  'Slider Movement'
+];
+
+// B.5 Cooling System (6 items)
+const B5_COOLING = [
+  'Cavity',
+  'Core',
+  'Plate',
+  'Stripper',
+  'Heat Transfer Rod / Pipe',
+  'Nipples Size'
+];
+
+// B.6 Hot Runner System (4 items)
+const B6_HOTRUNNER = [
+  'Sprue Bush Heater',
+  'Manifold',
+  'Sub-runner Heater',
+  'Temp. Controller'
+];
+
+// B.7 Unscrewing (2 items)
+const B7_UNSCREWING = [
+  'Returned Core',
+  'Stripper Move Forward'
+];
+
+// B.8 Product Take Out (3 items)
+const B8_TAKEOUT = [
+  'Robot',
+  'Space for Robot Arm',
+  'Operator'
+];
+
+// B.9 Balancing (2 items)
+const B9_BALANCING = [
+  'Gate',
+  'Runner'
+];
+
+// C. Demoulding Condition (6 items) — toggle: NO / YES
+const C_DEMOULDING = [
+  'Runner Sticking',
+  'Gate Cracking',
+  'Sticking on Cavity',
+  'Crack When Opening',
+  'Crack When Ejection',
+  'Crack When Unscrewing'
+];
+
+// D. Product Aesthetic Evaluation (26 items) — toggle: OK / NG
+const D_AESTHETIC = [
+  'Surface Finish',
+  'Flashing',
+  'Scratch',
+  'Gas Mark / Burnst',
+  'Short shoot',
   'Weld Line',
-  'Flow Mark',
-  'Silver Streak',
-  'Burn Mark',
-  'Warpage / Deformasi',
-  'Bubble / Void',
-  'Jetting',
+  'Warping/Bending',
+  'Sinkmark at body R/L',
+  'Flow Mark/ Air Trap',
+  'Wrinkle',
   'Gate Mark',
-  'Ejector Mark (visible)',
-  'Scratches / Goresan',
-  'Color Uneven / Belang',
-  'Surface Gloss Consistency',
-  'Dimension Accuracy'
+  'White Mark',
+  'Parting Line',
+  'Logo',
+  'Country Marking',
+  'Cavity Number',
+  'Cover Pull Force',
+  'Push Button Force',
+  'Hinge Force',
+  'Separation Force',
+  'Torque Force',
+  'Pop-Up',
+  'Hinge Lock',
+  'Step',
+  'Gap',
+  'Unequal Gap'
 ];
 
-const SECTIONS = [
-  { id: 1, key: 'A', label: 'Info Umum',        sub: 'Data Trial & Mesin' },
-  { id: 2, key: 'B', label: 'Mold Mechanism',   sub: 'Kondisi Mekanisme' },
-  { id: 3, key: 'C', label: 'Demoulding',        sub: 'Kondisi Eject' },
-  { id: 4, key: 'D', label: 'Aesthetic Eval.',   sub: 'Visual Produk' },
-  { id: 5, key: 'E', label: 'Cavity Layout',     sub: 'Status Per Cavity' },
-  { id: 6, key: 'F', label: 'Conclusion',        sub: 'Judgment & Ringkasan' },
-  { id: 7, key: 'G', label: 'Cooling Analysis',  sub: 'Temp Inlet vs Outlet' }
+// ----------------------------------------------------------------
+// SIDEBAR NAVIGATION STRUCTURE
+// ----------------------------------------------------------------
+const MTER_NAV = [
+  {
+    type: 'item',
+    label: 'Header Informasi',
+    panelId: 'panel-header-info',
+    key: 'HeaderInfo',
+    icon: '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>'
+  },
+  {
+    type: 'item',
+    label: 'A. Injection Machine',
+    panelId: 'panel-inj-machine',
+    key: 'InjMachine',
+    icon: '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3v4M8 3v4"/></svg>'
+  },
+  {
+    type: 'accordion',
+    label: 'B. Mold Mechanism',
+    key: 'B',
+    icon: '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>',
+    children: [
+      { label: 'B.1 Opening Mechanism', panelId: 'panel-b1-opening', key: 'B1Opening' },
+      { label: 'B.2 Slider Mechanism', panelId: 'panel-b2-slider', key: 'B2Slider' },
+      { label: 'B.3 Ejector Mechanism', panelId: 'panel-b3-ejector', key: 'B3Ejector' },
+      { label: 'B.4 Hydraulic System', panelId: 'panel-b4-hydraulic', key: 'B4Hydraulic' },
+      { label: 'B.5 Cooling System', panelId: 'panel-b5-cooling', key: 'B5Cooling' },
+      { label: 'B.6 Hot Runner System', panelId: 'panel-b6-hotrunner', key: 'B6HotRunner' },
+      { label: 'B.7 Unscrewing', panelId: 'panel-b7-unscrewing', key: 'B7Unscrewing' },
+      { label: 'B.8 Product Take Out', panelId: 'panel-b8-takeout', key: 'B8TakeOut' },
+      { label: 'B.9 Balancing', panelId: 'panel-b9-balancing', key: 'B9Balancing' }
+    ]
+  },
+  {
+    type: 'item',
+    label: 'C. Demoulding Condition',
+    panelId: 'panel-c-demoulding',
+    key: 'CDemoulding',
+    icon: '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>'
+  },
+  {
+    type: 'item',
+    label: 'D. Product Aesthetic',
+    panelId: 'panel-d-aesthetic',
+    key: 'DAesthetic',
+    icon: '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15 8 22 9 17 14 18 21 12 17 6 21 7 14 2 9 9 8 12 2"/></svg>'
+  },
+  {
+    type: 'item',
+    label: 'E. Cavity Layout',
+    panelId: 'panel-e-cavity',
+    key: 'ECavity',
+    icon: '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>'
+  },
+  {
+    type: 'item',
+    label: 'F. Conclusion',
+    panelId: 'panel-f-conclusion',
+    key: 'FConclusion',
+    icon: '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>'
+  }
 ];
 
-// SVG Icons for sidebar items (Lucide style)
-const SECTION_ICONS = {
-  1: `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg>`,
-  2: `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>`,
-  3: `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>`,
-  4: `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>`,
-  5: `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>`,
-  6: `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`,
-  7: `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>`
-};
+// ----------------------------------------------------------------
+// SVG SNIPPETS
+// ----------------------------------------------------------------
+const NOTE_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>';
+const CHECK_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+const CHEVRON_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+const SAVE_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>';
 
-// Note SVG icon
-const NOTE_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`;
-
-// Check SVG icon
-const CHECK_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
-
-// ================================================================
+// ----------------------------------------------------------------
 // STATE
-// ================================================================
-let currentStep = 1;
-const TOTAL = 7;
-
-// Current active mode: 'mter' or 'parambank'
-let currentMode = 'parambank'; // Parameter Bank is default active
+// ----------------------------------------------------------------
+let currentMode = 'parambank';
+let activePanelId = null;
+let openAccordion = null;
 
 const state = {
-  moldMech:        {},
-  moldMechNotes:   {},
-  nippleSize:      '',
-  demoulding:      {},
-  demouldingNotes: {},
-  aesthetic:       {},
-  aestheticNotes:  {},
-  cavities:        {},
-  coolingData: {
-    1: { inlet: '', outlet: '' },
-    2: { inlet: '', outlet: '' },
-    3: { inlet: '', outlet: '' },
-    4: { inlet: '', outlet: '' }
-  }
+  b1: {}, b1Notes: {},
+  b2: {}, b2Notes: {},
+  b3: {}, b3Notes: {},
+  b4: {}, b4Notes: {},
+  b5: {}, b5Notes: {},
+  b6: {}, b6Notes: {},
+  b7: {}, b7Notes: {},
+  b8: {}, b8Notes: {},
+  b9: {}, b9Notes: {},
+  c: {}, cNotes: {},
+  d: {}, dNotes: {},
+  f_produk: '',
+  f_mesin: '',
+  f_mold: '',
+  f_peripheral: '',
+  nippleSize: '',      // '1/4"' | '3/8"' | ''
+  b5ZonesCount: 4,
+  b5ZonesData: [],
+  cavityCount: 4,
+  cavities: [],
+  moldStatus: '',
+  saved: {}
 };
+for (let i = 0; i < state.cavityCount; i++) state.cavities.push({ status: '', action: '', result: '', remark: '' });
 
-const savedSections = {};
-let coolingChart = null;
+// ----------------------------------------------------------------
+// PARAMETER BANK FIELD IDs
+// ----------------------------------------------------------------
+const PB_FIELD_IDS = [
+  // General Information
+  'pb_tanggal', 'pb_machine', 'pb_machine_custom', 'pb_mould', 'pb_cavity', 'pb_produksi', 'pb_ket',
+  'pb_material', 'pb_material_custom', 'pb_berat_shoot', 'pb_berat_unit', 'pb_berat_runner', 'pb_cycleTime',
+  
+  // Temp & Heater
+  'pb_nozzle', 'pb_front', 'pb_middle', 'pb_rear', 'pb_hopper', 'pb_coolCavity', 'pb_coolCore', 'pb_oilTemp',
+  'pb_heater1', 'pb_heater2', 'pb_heater3', 'pb_heater4', 'pb_block', 'pb_hnSprue',
+  
+  // Mould Close / Open
+  'pb_mp_time', 'pb_mp_torque', 'pb_mo_time', 'pb_mo_torque',
+  
+  // Injection Stage 1-7
+  'pb_v1', 'pb_v2', 'pb_v3', 'pb_v4', 'pb_v5', 'pb_v6', 'pb_v7',
+  'pb_p1', 'pb_p2', 'pb_p3', 'pb_p4', 'pb_p5', 'pb_p6', 'pb_p7',
+  'pb_ls1', 'pb_ls2', 'pb_ls3', 'pb_ls4', 'pb_ls5', 'pb_ls6', 'pb_ls7',
+  
+  // Holding Pressure
+  'pb_hold_p5', 'pb_hold_p4', 'pb_hold_p3', 'pb_hold_p2', 'pb_hold_p1',
+  'pb_hold_t5', 'pb_hold_t4', 'pb_hold_t3', 'pb_hold_t2', 'pb_hold_t1',
+  
+  // Plastifikasi & Melt Decomp
+  'pb_screwSpeed', 'pb_backPress', 'pb_dosingPos',
+  'pb_vsb', 'pb_lsb',
+  
+  // Ejector
+  'pb_ej_ko', 'pb_ej_semi', 'pb_ej_std', 'pb_ej_pre',
+  
+  // Timing
+  'pb_coolingTime', 'pb_cureTime', 'pb_injTime', 'pb_suckBack'
+];
 
-// ================================================================
-// SIDEBAR BUILD — 2 Main Modes + MTER sub-sections
-// ================================================================
+// ----------------------------------------------------------------
+// SIDEBAR BUILD
+// ----------------------------------------------------------------
 function buildSidebar() {
   const nav = document.getElementById('sidebarNav');
   if (!nav) return;
   nav.innerHTML = '';
 
-  // --- Mode Items ---
-  const modeLabel = document.createElement('div');
-  modeLabel.className = 'sidebar-section-label';
-  modeLabel.textContent = 'Mode Utama';
+  const modeLabel = _el('div', 'sidebar-section-label', 'Mode Utama');
   nav.appendChild(modeLabel);
 
-  // Parameter Bank mode button
-  const pbBtn = document.createElement('button');
-  pbBtn.className = `sidebar-mode-item${currentMode === 'parambank' ? ' active' : ''}`;
-  pbBtn.id = 'mode-parambank';
-  pbBtn.innerHTML = `
-    <span class="smi-icon">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg>
-    </span>
-    <span class="smi-text">
-      Parameter Bank
-      <span class="smi-sub">Mitsubishi MEt II</span>
-    </span>
-  `;
-  pbBtn.addEventListener('click', () => { switchMode('parambank'); closeSidebar(); });
-  nav.appendChild(pbBtn);
+  nav.appendChild(_modeBtn('parambank', 'Parameter Bank', 'CRUD Parameter Mesin',
+    '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg>',
+    () => { switchMode('parambank'); closeSidebar(); }
+  ));
+  nav.appendChild(_modeBtn('coolingsketch', 'Cooling Sketch', 'Sketsa Jalur Pendingin',
+    '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>',
+    () => { switchMode('coolingsketch'); closeSidebar(); }
+  ));
+  nav.appendChild(_modeBtn('mter', 'MTER Checksheet', 'Mold Trial Evaluation',
+    '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
+    () => { switchMode('mter'); closeSidebar(); }
+  ));
+  nav.appendChild(_modeBtn('analytics', 'Analisa & Dashboard', 'Visualisasi Data KPI',
+    '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>',
+    () => { switchMode('analytics'); closeSidebar(); }
+  ));
+  nav.appendChild(_modeBtn('reporthistory', 'Report History', 'Arsip Laporan MTER',
+    '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18M3 9h18M3 15h18M3 21h18"/></svg>',
+    () => { switchMode('reporthistory'); closeSidebar(); }
+  ));
 
-  // MTER Checksheet mode button
-  const mterBtn = document.createElement('button');
-  mterBtn.className = `sidebar-mode-item${currentMode === 'mter' ? ' active' : ''}`;
-  mterBtn.id = 'mode-mter';
-  mterBtn.innerHTML = `
-    <span class="smi-icon">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-    </span>
-    <span class="smi-text">
-      MTER Checksheet
-      <span class="smi-sub">Mold Trial Evaluation</span>
-    </span>
-  `;
-  mterBtn.addEventListener('click', () => { switchMode('mter'); closeSidebar(); });
-  nav.appendChild(mterBtn);
-
-  // Divider
-  const divider = document.createElement('div');
-  divider.className = 'sidebar-divider';
-  nav.appendChild(divider);
-
-  // --- MTER Sub-sections (only shown in mter mode) ---
   if (currentMode === 'mter') {
-    const secLabel = document.createElement('div');
-    secLabel.className = 'sidebar-section-label';
-    secLabel.textContent = 'Sections A – G';
+    nav.appendChild(_el('div', 'sidebar-divider'));
+    const secLabel = _el('div', 'sidebar-section-label', 'Sections');
     nav.appendChild(secLabel);
 
-    SECTIONS.forEach(sec => {
-      const btn = document.createElement('button');
-      btn.className = `sidebar-item${sec.id === currentStep ? ' active' : ''}`;
-      btn.id = `si-${sec.id}`;
-      btn.innerHTML = `
-        <span class="si-icon">${SECTION_ICONS[sec.id]}</span>
-        <span style="flex:1; min-width:0;">
-          <span style="display:block; font-size:0.78rem; font-weight:500;">${sec.label}</span>
-          <span style="display:block; font-size:0.6rem; color:var(--text-muted); font-weight:400;">${sec.sub}</span>
-        </span>
-        ${savedSections[sec.key] ? `<span class="si-badge">${CHECK_SVG}</span>` : ''}
-      `;
-      btn.addEventListener('click', () => { goToStep(sec.id); closeSidebar(); });
-      nav.appendChild(btn);
+    MTER_NAV.forEach(item => {
+      if (item.type === 'item') nav.appendChild(_navItem(item));
+      else if (item.type === 'accordion') nav.appendChild(_accChapter(item));
     });
 
-    // Export button
-    const divider2 = document.createElement('div');
-    divider2.className = 'sidebar-divider';
-    nav.appendChild(divider2);
+    nav.appendChild(_el('div', 'sidebar-divider'));
 
     const exportBtn = document.createElement('button');
     exportBtn.className = 'sidebar-item export-item';
-    exportBtn.innerHTML = `
-      <span class="si-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      </span>
-      <span style="font-size:0.78rem; font-weight:600;">Export PDF Report</span>
-    `;
+    exportBtn.innerHTML = `<span class="si-icon"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span><span style="font-size:.78rem;font-weight:600;">Export PDF Report</span>`;
     exportBtn.addEventListener('click', () => { closeSidebar(); exportReport(); });
     nav.appendChild(exportBtn);
   }
 }
 
-// ================================================================
+function _el(tag, cls, text) {
+  const el = document.createElement(tag);
+  if (cls) el.className = cls;
+  if (text !== undefined) el.textContent = text;
+  return el;
+}
+
+function _modeBtn(modeKey, label, sub, iconHtml, onClick) {
+  const btn = document.createElement('button');
+  btn.className = `sidebar-mode-item${currentMode === modeKey ? ' active' : ''}`;
+  btn.innerHTML = `<span class="smi-icon">${iconHtml}</span><span class="smi-text">${label}<span class="smi-sub">${sub}</span></span>`;
+  btn.addEventListener('click', onClick);
+  return btn;
+}
+
+function _navItem(item) {
+  const btn = document.createElement('button');
+  const isActive = activePanelId === item.panelId;
+  btn.className = `sidebar-item${isActive ? ' active' : ''}`;
+  btn.innerHTML = `<span class="si-icon">${item.icon}</span><span style="flex:1;font-size:.78rem;">${item.label}</span>${state.saved[item.key] ? `<span class="si-badge">${CHECK_SVG}</span>` : ''}`;
+  btn.addEventListener('click', () => { showPanel(item.panelId); closeSidebar(); buildSidebar(); });
+  return btn;
+}
+
+function _accChapter(item) {
+  const wrap = document.createElement('div');
+  wrap.className = 'acc-chapter';
+  const isOpen = openAccordion === item.key;
+  const anyActive = item.children.some(c => c.panelId === activePanelId);
+
+  const btn = document.createElement('button');
+  btn.className = `acc-chapter-btn${anyActive ? ' active' : ''}${isOpen ? ' open' : ''}`;
+  btn.innerHTML = `<span class="acc-icon">${item.icon}</span><span style="flex:1;font-size:.79rem;font-weight:600;">${item.label}</span><span class="acc-chevron">${CHEVRON_SVG}</span>`;
+  btn.addEventListener('click', () => {
+    openAccordion = openAccordion === item.key ? null : item.key;
+    buildSidebar();
+  });
+
+  const children = document.createElement('div');
+  children.className = `acc-children${isOpen ? ' open' : ''}`;
+
+  item.children.forEach(child => {
+    const subBtn = document.createElement('button');
+    const isChildActive = activePanelId === child.panelId;
+    subBtn.className = `acc-sub-item${isChildActive ? ' active' : ''}`;
+    subBtn.innerHTML = `<span style="font-size:.75rem;">${child.label}</span>${state.saved[child.key] ? `<span class="si-badge" style="margin-left:auto;">${CHECK_SVG}</span>` : ''}`;
+    subBtn.addEventListener('click', () => { showPanel(child.panelId); closeSidebar(); buildSidebar(); });
+    children.appendChild(subBtn);
+  });
+
+  wrap.appendChild(btn);
+  wrap.appendChild(children);
+  return wrap;
+}
+
+// ----------------------------------------------------------------
+// PANEL SHOW
+// ----------------------------------------------------------------
+function showPanel(panelId) {
+  if (currentMode !== 'mter') switchMode('mter');
+  activePanelId = panelId;
+  sessionStorage.setItem('activePanelId', panelId);
+  document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(panelId)?.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ----------------------------------------------------------------
 // MODE SWITCHING
-// ================================================================
+// ----------------------------------------------------------------
 function switchMode(mode) {
   currentMode = mode;
+  sessionStorage.setItem('currentMode', mode);
   const mterEl = document.getElementById('mterMode');
-  const pbEl   = document.getElementById('paramBankMode');
-  const progress = document.getElementById('topProgress');
-  const progressPill = document.getElementById('progressPill');
-  const headerTitle = document.getElementById('headerTitle');
-  const headerSub   = document.getElementById('headerSub');
+  const pbEl = document.getElementById('paramBankMode');
+  const rhEl = document.getElementById('reportHistoryMode');
+  const csEl = document.getElementById('coolingSketchMode');
+  const hTitle = document.getElementById('headerTitle');
+  const hSub = document.getElementById('headerSub');
+
+  mterEl.style.display = 'none';
+  pbEl.style.display = 'none';
+  rhEl.style.display = 'none';
+  if(csEl) csEl.style.display = 'none';
+  document.getElementById('analyticsMode').style.display = 'none';
 
   if (mode === 'mter') {
     mterEl.style.display = '';
-    pbEl.style.display   = 'none';
-    progress.style.display  = '';
-    progressPill.style.display = '';
-    headerTitle.textContent = 'MTER Checksheet';
-    headerSub.textContent   = 'Mold Trial & Evaluation Report';
-    // Init chart if we return to section G
-    if (currentStep === 7) {
-      setTimeout(() => { initCoolingChart(); updateCoolingStats(); }, 50);
+    hTitle.textContent = 'MTER Checksheet';
+    hSub.textContent = 'Mold Trial & Evaluation Report';
+    if (!activePanelId) {
+      activePanelId = 'panel-header-info';
+      document.getElementById('panel-header-info')?.classList.add('active');
     }
-  } else {
-    mterEl.style.display = 'none';
-    pbEl.style.display   = '';
-    progress.style.display  = 'none';
-    progressPill.style.display = 'none';
-    headerTitle.textContent = 'Parameter Bank';
-    headerSub.textContent   = 'Mitsubishi MEt II — CRUD Parameters';
+  } else if (mode === 'parambank') {
+    pbEl.style.display = '';
+    hTitle.textContent = 'Parameter Bank';
+    hSub.textContent = 'Standardisasi Parameter Mesin';
+  } else if (mode === 'coolingsketch') {
+    if(csEl) csEl.style.display = '';
+    hTitle.textContent = 'Cooling Sketch';
+    hSub.textContent = 'Sketsa Jalur Pendingin Mould';
+  } else if (mode === 'reporthistory') {
+    rhEl.style.display = '';
+    hTitle.textContent = 'Report History';
+    hSub.textContent = 'Arsip Laporan Trial';
+    renderReportHistory();
+  } else if (mode === 'analytics') {
+    document.getElementById('analyticsMode').style.display = '';
+    hTitle.textContent = 'Analisa & Dashboard';
+    hSub.textContent = 'KPI & Performance Mold';
+    renderAnalyticsDashboard();
   }
-
   buildSidebar();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// ================================================================
-// SIDEBAR OPEN / CLOSE
-// ================================================================
-function openSidebar() {
-  document.getElementById('sidebar').classList.add('open');
-  document.getElementById('sidebarOverlay').classList.add('open');
-  document.getElementById('hamburger').classList.add('is-open');
-  document.body.style.overflow = 'hidden';
-}
+// ----------------------------------------------------------------
+// REPORT HISTORY RENDER
+// ----------------------------------------------------------------
+function renderReportHistory() {
+  const listEl = document.getElementById('rhList');
+  const emptyEl = document.getElementById('rhEmpty');
+  if (!listEl || !emptyEl) return;
 
-function closeSidebar() {
-  document.getElementById('sidebar').classList.remove('open');
-  document.getElementById('sidebarOverlay').classList.remove('open');
-  document.getElementById('hamburger').classList.remove('is-open');
-  document.body.style.overflow = '';
-}
+  const saved = JSON.parse(localStorage.getItem('mter-reports') || '[]');
+  listEl.innerHTML = '';
 
-// ================================================================
-// NAVIGATION (MTER steps)
-// ================================================================
-function goToStep(step) {
-  if (step < 1 || step > TOTAL) return;
-  currentStep = step;
-
-  document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
-  document.getElementById(`panel${step}`)?.classList.add('active');
-
-  document.querySelectorAll('.sidebar-item').forEach(b => b.classList.remove('active'));
-  document.getElementById(`si-${step}`)?.classList.add('active');
-
-  const pct = Math.round((step / TOTAL) * 100);
-  document.getElementById('progressFill').style.width = pct + '%';
-  document.getElementById('progressLabel').textContent = `${step}/${TOTAL}`;
-
-  if (step === 5) generateCavityGrid();
-  if (step === 6) updateConclusion();
-  if (step === 7) {
-    setTimeout(() => { initCoolingChart(); updateCoolingStats(); }, 50);
+  if (saved.length === 0) {
+    emptyEl.style.display = 'flex';
+  } else {
+    emptyEl.style.display = 'none';
+    saved.forEach(report => {
+      const d = new Date(report.date || Date.now());
+      const div = document.createElement('div');
+      div.className = 'rh-item';
+      let badgeClass = '';
+      if (report.judgment === 'REJECTED') badgeClass = ' rh-badge-ng';
+      else if (report.judgment === 'CONDITIONAL') badgeClass = ' rh-badge-conditional';
+      div.innerHTML = `
+        <div class="rh-item-meta"><span class="rh-item-badge${badgeClass}">${report.trialNumber || 'Trial #?'}</span><span class="rh-item-date">${d.toISOString().split('T')[0]}</span></div>
+        <div class="rh-item-info"><p class="rh-item-mold">${report.moldCode || 'MOLD-?'} &mdash; ${report.partName || 'Unknown Part'}</p><p class="rh-item-detail">Mesin: ${report.machine || '-'} &bull; Material: ${report.material || '-'} &bull; Judgment: ${report.judgment || 'N/A'}</p></div>
+        <div class="rh-item-actions">
+          <button class="rh-btn-view" onclick="showToast('Fitur View Report belum tersedia.','info')"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg> View</button>
+        </div>`;
+      listEl.appendChild(div);
+    });
   }
-
-  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// ================================================================
-// TOGGLE ITEMS (Sections B, C, D)
-// ================================================================
-function buildToggleItems(containerId, items, type, stateKey, notesKey) {
+// ----------------------------------------------------------------
+// TOGGLE ITEMS (OK/NG with expandable notes) — generic for all sections except B5
+// ----------------------------------------------------------------
+function buildToggleItems(containerId, items, stateKey, notesKey) {
   const container = document.getElementById(containerId);
   if (!container) return;
   container.innerHTML = '';
-
-  const triggerVal = type === 'okng' ? 'NG' : 'YES';
 
   items.forEach((item, i) => {
     const wrap = document.createElement('div');
     wrap.className = 'toggle-item';
 
-    const isNipple = item === 'Cooling Nipples Condition';
-
-    let btnsHTML = '';
-    if (type === 'okng') {
-      btnsHTML = `
-        <button class="t-btn ok${state[stateKey][i] === 'OK' ? ' sel' : ''}" data-val="OK">OK</button>
-        <button class="t-btn ng${state[stateKey][i] === 'NG' ? ' sel' : ''}" data-val="NG">NG</button>
-      `;
-    } else {
-      btnsHTML = `
-        <button class="t-btn no${state[stateKey][i] === 'NO' ? ' sel' : ''}" data-val="NO">NO</button>
-        <button class="t-btn yes${state[stateKey][i] === 'YES' ? ' sel' : ''}" data-val="YES">YES</button>
-      `;
-    }
-
-    const savedNote = state[notesKey][i] || {};
-    const notesOpen = state[stateKey][i] === triggerVal ? 'open' : '';
-    const notesBtnOpen = notesOpen ? 'is-open' : '';
+    const s = state[stateKey][i] || '';
+    const notes = state[notesKey][i] || {};
+    const hasData = !!(notes.action || notes.result || notes.remark);
 
     wrap.innerHTML = `
       <div class="toggle-item-row">
@@ -325,720 +501,1506 @@ function buildToggleItems(containerId, items, type, stateKey, notesKey) {
           <span class="ti-text">${item}</span>
         </div>
         <div class="ti-controls">
-          <div class="t-opts">${btnsHTML}</div>
-          <button class="note-icon-btn ${notesBtnOpen}" title="Tambah Catatan">${NOTE_ICON_SVG}</button>
+          <button class="t-btn ok${s === 'OK' ? ' sel' : ''}" data-val="OK">OK</button>
+          <button class="t-btn ng${s === 'NG' ? ' sel' : ''}" data-val="NG">NG</button>
+          <button class="note-icon-btn${hasData ? ' is-open' : ''}" title="Tambah Catatan">${NOTE_SVG}</button>
         </div>
       </div>
-      <div class="toggle-notes ${notesOpen}" id="tn-${stateKey}-${i}">
+      <div class="toggle-notes${hasData ? ' open' : ''}" id="tn-${stateKey}-${i}">
         <div class="notes-inner">
-          <div class="note-row">
-            <span class="note-row-label">Action</span>
-            <input type="text" placeholder="Tindakan yang dilakukan..." value="${savedNote.action || ''}" data-field="action" />
-          </div>
-          <div class="note-row">
-            <span class="note-row-label">Result</span>
-            <input type="text" placeholder="Hasil yang diperoleh..." value="${savedNote.result || ''}" data-field="result" />
-          </div>
-          <div class="note-row">
-            <span class="note-row-label">Remark</span>
-            <input type="text" placeholder="Catatan tambahan..." value="${savedNote.remark || ''}" data-field="remark" />
-          </div>
+          <div class="note-row"><span class="note-row-label">Action</span><input type="text" placeholder="Tindakan yang dilakukan..." value="${notes.action || ''}" data-field="action"/></div>
+          <div class="note-row"><span class="note-row-label">Result</span><input type="text" placeholder="Hasil yang diperoleh..."    value="${notes.result || ''}" data-field="result"/></div>
+          <div class="note-row"><span class="note-row-label">Remark</span><input type="text" placeholder="Catatan tambahan..."         value="${notes.remark || ''}" data-field="remark"/></div>
         </div>
-      </div>
-    `;
+      </div>`;
 
     container.appendChild(wrap);
 
-    // Wire toggle buttons
     wrap.querySelectorAll('.t-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const val = btn.dataset.val;
-        state[stateKey][i] = val;
-        wrap.querySelectorAll('.t-btn').forEach(b => b.classList.remove('sel'));
-        btn.classList.add('sel');
-
-        const notesEl = document.getElementById(`tn-${stateKey}-${i}`);
-        const noteBtn = wrap.querySelector('.note-icon-btn');
-        const hasData = !!(state[notesKey][i]?.action || state[notesKey][i]?.result || state[notesKey][i]?.remark);
-
-        if (val === triggerVal) {
-          notesEl?.classList.add('open');
-          noteBtn?.classList.add('is-open');
-        } else if (!hasData) {
-          notesEl?.classList.remove('open');
-          noteBtn?.classList.remove('is-open');
+        if (state[stateKey][i] === val) {
+          state[stateKey][i] = '';
+          wrap.querySelectorAll('.t-btn').forEach(b => b.classList.remove('sel'));
+        } else {
+          state[stateKey][i] = val;
+          wrap.querySelectorAll('.t-btn').forEach(b => b.classList.remove('sel'));
+          btn.classList.add('sel');
         }
       });
     });
 
-    // Wire note icon button
     const noteBtn = wrap.querySelector('.note-icon-btn');
     noteBtn?.addEventListener('click', () => {
       const notesEl = document.getElementById(`tn-${stateKey}-${i}`);
       const isOpen = notesEl?.classList.contains('open');
-      if (isOpen) {
-        notesEl?.classList.remove('open');
-        noteBtn.classList.remove('is-open');
-      } else {
-        notesEl?.classList.add('open');
-        noteBtn.classList.add('is-open');
-        setTimeout(() => notesEl?.querySelector('input')?.focus(), 300);
-      }
+      if (isOpen) { notesEl?.classList.remove('open'); noteBtn.classList.remove('is-open'); }
+      else { notesEl?.classList.add('open'); noteBtn.classList.add('is-open'); setTimeout(() => notesEl?.querySelector('input')?.focus(), 280); }
     });
 
-    // Wire note inputs
     wrap.querySelectorAll('.notes-inner input').forEach(inp => {
       inp.addEventListener('input', () => {
         if (!state[notesKey][i]) state[notesKey][i] = {};
         state[notesKey][i][inp.dataset.field] = inp.value;
       });
     });
+  });
+}
 
-    // Nipple special row
-    if (isNipple) {
-      const nippleWrap = document.createElement('div');
-      nippleWrap.className = 'nipple-row';
-      nippleWrap.innerHTML = `
-        <span class="nipple-label">&#8627; Nipples Size</span>
-        <button class="nipple-btn${state.nippleSize === '1/4"' ? ' sel' : ''}" data-size='1/4"'>1/4"</button>
-        <button class="nipple-btn${state.nippleSize === '3/8"' ? ' sel' : ''}" data-size='3/8"'>3/8"</button>
-      `;
-      nippleWrap.querySelectorAll('.nipple-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          state.nippleSize = btn.dataset.size;
-          nippleWrap.querySelectorAll('.nipple-btn').forEach(b => b.classList.remove('sel'));
+// ----------------------------------------------------------------
+// TOGGLE ITEMS (NO/YES with expandable notes) — specialized for Section C
+// ----------------------------------------------------------------
+function buildToggleItemsNoYes(containerId, items, stateKey, notesKey) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = '';
+
+  items.forEach((item, i) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'toggle-item';
+
+    const s = state[stateKey][i] || '';
+    const notes = state[notesKey][i] || {};
+    const hasData = !!(notes.action || notes.result || notes.remark);
+
+    wrap.innerHTML = `
+      <div class="toggle-item-row">
+        <div class="ti-label">
+          <span class="ti-num">${i + 1}</span>
+          <span class="ti-text">${item}</span>
+        </div>
+        <div class="ti-controls">
+          <button class="t-btn ok${s === 'YES' ? ' sel' : ''}" data-val="YES">YES</button>
+          <button class="t-btn ng${s === 'NO' ? ' sel' : ''}" data-val="NO">NO</button>
+          <button class="note-icon-btn${hasData ? ' is-open' : ''}" title="Tambah Catatan">${NOTE_SVG}</button>
+        </div>
+      </div>
+      <div class="toggle-notes${hasData ? ' open' : ''}" id="tn-${stateKey}-${i}">
+        <div class="notes-inner">
+          <div class="note-row"><span class="note-row-label">Action</span><input type="text" placeholder="Tindakan yang dilakukan..." value="${notes.action || ''}" data-field="action"/></div>
+          <div class="note-row"><span class="note-row-label">Result</span><input type="text" placeholder="Hasil yang diperoleh..."    value="${notes.result || ''}" data-field="result"/></div>
+          <div class="note-row"><span class="note-row-label">Remark</span><input type="text" placeholder="Catatan tambahan..."         value="${notes.remark || ''}" data-field="remark"/></div>
+        </div>
+      </div>`;
+
+    container.appendChild(wrap);
+
+    wrap.querySelectorAll('.t-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const val = btn.dataset.val;
+        if (state[stateKey][i] === val) {
+          state[stateKey][i] = '';
+          wrap.querySelectorAll('.t-btn').forEach(b => b.classList.remove('sel'));
+        } else {
+          state[stateKey][i] = val;
+          wrap.querySelectorAll('.t-btn').forEach(b => b.classList.remove('sel'));
           btn.classList.add('sel');
+        }
+      });
+    });
+
+    const noteBtn = wrap.querySelector('.note-icon-btn');
+    noteBtn?.addEventListener('click', () => {
+      const notesEl = document.getElementById(`tn-${stateKey}-${i}`);
+      const isOpen = notesEl?.classList.contains('open');
+      if (isOpen) { notesEl?.classList.remove('open'); noteBtn.classList.remove('is-open'); }
+      else { notesEl?.classList.add('open'); noteBtn.classList.add('is-open'); setTimeout(() => notesEl?.querySelector('input')?.focus(), 280); }
+    });
+
+    wrap.querySelectorAll('.notes-inner input').forEach(inp => {
+      inp.addEventListener('input', () => {
+        if (!state[notesKey][i]) state[notesKey][i] = {};
+        state[notesKey][i][inp.dataset.field] = inp.value;
+      });
+    });
+  });
+}
+
+// ----------------------------------------------------------------
+// B5 SPECIAL BUILDER — handles Nipples Size differently
+// ----------------------------------------------------------------
+function buildB5CoolingItems() {
+  const container = document.getElementById('b5_coolingItems');
+  if (!container) return;
+  container.innerHTML = '';
+
+  B5_COOLING.forEach((item, i) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'toggle-item';
+
+    if (item === 'Nipples Size') {
+      const notes = state.b5Notes[i] || {};
+      const hasData = !!(notes.action || notes.result || notes.remark);
+      wrap.innerHTML = `
+        <div class="toggle-item-row">
+          <div class="ti-label">
+            <span class="ti-num">${i + 1}</span>
+            <span class="ti-text">${item}</span>
+          </div>
+          <div class="ti-controls">
+            <button class="nipple-btn${state.nippleSize === '1/4"' ? ' sel' : ''}" data-nip='1/4"'>1/4"</button>
+            <button class="nipple-btn${state.nippleSize === '3/8"' ? ' sel' : ''}" data-nip='3/8"'>3/8"</button>
+            <button class="note-icon-btn${hasData ? ' is-open' : ''}" title="Tambah Catatan">${NOTE_SVG}</button>
+          </div>
+        </div>
+        <div class="toggle-notes${hasData ? ' open' : ''}" id="tn-b5-${i}">
+          <div class="notes-inner">
+            <div class="note-row"><span class="note-row-label">Action</span><input type="text" placeholder="Tindakan yang dilakukan..." value="${notes.action || ''}" data-field="action"/></div>
+            <div class="note-row"><span class="note-row-label">Result</span><input type="text" placeholder="Hasil yang diperoleh..."    value="${notes.result || ''}" data-field="result"/></div>
+            <div class="note-row"><span class="note-row-label">Remark</span><input type="text" placeholder="Catatan tambahan..."         value="${notes.remark || ''}" data-field="remark"/></div>
+          </div>
+        </div>`;
+      container.appendChild(wrap);
+      wrap.querySelectorAll('.nipple-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const val = btn.dataset.nip;
+          if (state.nippleSize === val) {
+            state.nippleSize = '';
+            wrap.querySelectorAll('.nipple-btn').forEach(b => b.classList.remove('sel'));
+          } else {
+            state.nippleSize = val;
+            wrap.querySelectorAll('.nipple-btn').forEach(b => b.classList.remove('sel'));
+            btn.classList.add('sel');
+          }
         });
       });
-      container.appendChild(nippleWrap);
+      const noteBtn = wrap.querySelector('.note-icon-btn');
+      noteBtn?.addEventListener('click', () => {
+        const notesEl = document.getElementById(`tn-b5-${i}`);
+        const isOpen = notesEl?.classList.contains('open');
+        if (isOpen) { notesEl?.classList.remove('open'); noteBtn.classList.remove('is-open'); }
+        else { notesEl?.classList.add('open'); noteBtn.classList.add('is-open'); setTimeout(() => notesEl?.querySelector('input')?.focus(), 280); }
+      });
+      wrap.querySelectorAll('.notes-inner input').forEach(inp => {
+        inp.addEventListener('input', () => {
+          if (!state.b5Notes[i]) state.b5Notes[i] = {};
+          state.b5Notes[i][inp.dataset.field] = inp.value;
+        });
+      });
+      return;
     }
-  });
-}
 
-// ================================================================
-// CAVITY GRID (Section E)
-// ================================================================
-function generateCavityGrid() {
-  const count = parseInt(document.getElementById('cavityCount')?.value) || 4;
-  const grid = document.getElementById('cavityGrid');
-  if (!grid) return;
-  grid.innerHTML = '';
+    // Normal OK/NG toggle item
+    const s = state.b5[i] || '';
+    const notes = state.b5Notes[i] || {};
+    const hasData = !!(notes.action || notes.result || notes.remark);
 
-  for (let i = 1; i <= count; i++) {
-    const cell = document.createElement('div');
-    const s = state.cavities[i] || '';
-    cell.className = `cav-cell ${s}`;
-    cell.innerHTML = `<span class="c-num">C${i}</span><span class="c-status">${s ? s.toUpperCase() : '\u2014'}</span>`;
-    cell.addEventListener('click', () => {
-      const cur = state.cavities[i] || '';
-      const next = cur === '' ? 'ok' : cur === 'ok' ? 'ng' : '';
-      state.cavities[i] = next;
-      cell.className = `cav-cell ${next}`;
-      cell.querySelector('.c-status').textContent = next ? next.toUpperCase() : '\u2014';
+    wrap.innerHTML = `
+      <div class="toggle-item-row">
+        <div class="ti-label">
+          <span class="ti-num">${i + 1}</span>
+          <span class="ti-text">${item}</span>
+        </div>
+        <div class="ti-controls">
+          <button class="t-btn ok${s === 'OK' ? ' sel' : ''}" data-val="OK">OK</button>
+          <button class="t-btn ng${s === 'NG' ? ' sel' : ''}" data-val="NG">NG</button>
+          <button class="note-icon-btn${hasData ? ' is-open' : ''}" title="Tambah Catatan">${NOTE_SVG}</button>
+        </div>
+      </div>
+      <div class="toggle-notes${hasData ? ' open' : ''}" id="tn-b5-${i}">
+        <div class="notes-inner">
+          <div class="note-row"><span class="note-row-label">Action</span><input type="text" placeholder="Tindakan yang dilakukan..." value="${notes.action || ''}" data-field="action"/></div>
+          <div class="note-row"><span class="note-row-label">Result</span><input type="text" placeholder="Hasil yang diperoleh..."    value="${notes.result || ''}" data-field="result"/></div>
+          <div class="note-row"><span class="note-row-label">Remark</span><input type="text" placeholder="Catatan tambahan..."         value="${notes.remark || ''}" data-field="remark"/></div>
+        </div>
+      </div>`;
+
+    container.appendChild(wrap);
+
+    wrap.querySelectorAll('.t-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const val = btn.dataset.val;
+        if (state.b5[i] === val) {
+          state.b5[i] = '';
+          wrap.querySelectorAll('.t-btn').forEach(b => b.classList.remove('sel'));
+        } else {
+          state.b5[i] = val;
+          wrap.querySelectorAll('.t-btn').forEach(b => b.classList.remove('sel'));
+          btn.classList.add('sel');
+        }
+      });
     });
-    grid.appendChild(cell);
-  }
-}
 
-function setCavAll(status) {
-  const count = parseInt(document.getElementById('cavityCount')?.value) || 4;
-  for (let i = 1; i <= count; i++) state.cavities[i] = status;
-  generateCavityGrid();
-}
+    const noteBtn = wrap.querySelector('.note-icon-btn');
+    noteBtn?.addEventListener('click', () => {
+      const notesEl = document.getElementById(`tn-b5-${i}`);
+      const isOpen = notesEl?.classList.contains('open');
+      if (isOpen) { notesEl?.classList.remove('open'); noteBtn.classList.remove('is-open'); }
+      else { notesEl?.classList.add('open'); noteBtn.classList.add('is-open'); setTimeout(() => notesEl?.querySelector('input')?.focus(), 280); }
+    });
 
-// ================================================================
-// CONCLUSION (Section F)
-// ================================================================
-function updateConclusion() {
-  const el = document.getElementById('conclusionSummary');
-  if (!el) return;
-
-  const mechOK  = Object.values(state.moldMech).filter(v => v === 'OK').length;
-  const mechNG  = Object.values(state.moldMech).filter(v => v === 'NG').length;
-  const demoNO  = Object.values(state.demoulding).filter(v => v === 'NO').length;
-  const demoYES = Object.values(state.demoulding).filter(v => v === 'YES').length;
-  const aesOK   = Object.values(state.aesthetic).filter(v => v === 'OK').length;
-  const aesNG   = Object.values(state.aesthetic).filter(v => v === 'NG').length;
-  const cavOK   = Object.values(state.cavities).filter(v => v === 'ok').length;
-  const cavNG   = Object.values(state.cavities).filter(v => v === 'ng').length;
-
-  el.innerHTML = `
-    <div class="conc-table">
-      <div class="conc-row">
-        <span class="conc-label">Mold Mechanism (B)</span>
-        <span class="conc-val"><span class="ok">${mechOK} OK</span> / <span class="${mechNG > 0 ? 'ng' : ''}">${mechNG} NG</span> / ${MOLD_MECH_ITEMS.length} total</span>
-      </div>
-      <div class="conc-row">
-        <span class="conc-label">Demoulding (C)</span>
-        <span class="conc-val"><span class="ok">${demoNO} NO-issue</span> / <span class="${demoYES > 0 ? 'ng' : ''}">${demoYES} YES</span> / ${DEMOULDING_ITEMS.length} total</span>
-      </div>
-      <div class="conc-row">
-        <span class="conc-label">Aesthetic (D)</span>
-        <span class="conc-val"><span class="ok">${aesOK} OK</span> / <span class="${aesNG > 0 ? 'ng' : ''}">${aesNG} NG</span> / ${AESTHETIC_ITEMS.length} total</span>
-      </div>
-      <div class="conc-row">
-        <span class="conc-label">Cavity Status</span>
-        <span class="conc-val"><span class="ok">${cavOK} OK</span> / <span class="${cavNG > 0 ? 'ng' : ''}">${cavNG} NG</span></span>
-      </div>
-      <div class="conc-row">
-        <span class="conc-label">Nipples Size</span>
-        <span class="conc-val">${state.nippleSize || '\u2014'}</span>
-      </div>
-    </div>
-  `;
-}
-
-// ================================================================
-// COOLING CHART (Chart.js) — Section G
-// ================================================================
-function initCoolingChart() {
-  const canvas = document.getElementById('coolingChart');
-  if (!canvas || typeof Chart === 'undefined') return;
-
-  const ctx = canvas.getContext('2d');
-  const labels = ['Zona 1', 'Zona 2', 'Zona 3', 'Zona 4'];
-  const inletData  = [1,2,3,4].map(z => parseFloat(state.coolingData[z].inlet)  || null);
-  const outletData = [1,2,3,4].map(z => parseFloat(state.coolingData[z].outlet) || null);
-
-  const commonDs = {
-    tension: 0.4, pointRadius: 5, pointHoverRadius: 7,
-    pointBorderWidth: 2, borderWidth: 2, spanGaps: true
-  };
-
-  const data = {
-    labels,
-    datasets: [
-      {
-        ...commonDs,
-        label: 'Inlet Temp (°C)',
-        data: inletData,
-        borderColor: '#4f46e5',
-        backgroundColor: 'rgba(79,70,229,0.08)',
-        pointBackgroundColor: '#4f46e5',
-        pointBorderColor: '#fff',
-        fill: true
-      },
-      {
-        ...commonDs,
-        label: 'Outlet Temp (°C)',
-        data: outletData,
-        borderColor: '#16a34a',
-        backgroundColor: 'rgba(22,163,74,0.08)',
-        pointBackgroundColor: '#16a34a',
-        pointBorderColor: '#fff',
-        fill: true
-      }
-    ]
-  };
-
-  if (coolingChart) {
-    coolingChart.data = data;
-    coolingChart.update('active');
-    return;
-  }
-
-  coolingChart = new Chart(ctx, {
-    type: 'line',
-    data,
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: { mode: 'index', intersect: false },
-      plugins: {
-        legend: {
-          position: 'top',
-          labels: {
-            color: '#64748b',
-            font: { family: 'Inter', size: 11, weight: '600' },
-            padding: 14,
-            usePointStyle: true,
-            pointStyleWidth: 8
-          }
-        },
-        tooltip: {
-          backgroundColor: '#ffffff',
-          titleColor: '#0f172a',
-          bodyColor: '#64748b',
-          borderColor: '#e2e8f0',
-          borderWidth: 1,
-          titleFont: { family: 'Inter', weight: '700' },
-          bodyFont: { family: 'Inter' },
-          padding: 10,
-          callbacks: {
-            label: ctx => ` ${ctx.dataset.label}: ${ctx.raw !== null ? ctx.raw + ' °C' : 'N/A'}`
-          }
-        }
-      },
-      scales: {
-        x: {
-          grid: { color: 'rgba(15,23,42,0.05)' },
-          ticks: { color: '#64748b', font: { family: 'Inter', size: 10, weight: '600' } }
-        },
-        y: {
-          suggestedMin: 0,
-          suggestedMax: 60,
-          grid: { color: 'rgba(15,23,42,0.05)' },
-          ticks: {
-            color: '#64748b',
-            font: { family: 'Inter', size: 10 },
-            stepSize: 5,
-            precision: 0,
-            callback: v => Math.round(v) + '°'
-          },
-          title: {
-            display: true,
-            text: 'Temperature (°C)',
-            color: '#64748b',
-            font: { family: 'Inter', size: 10, weight: '600' }
-          }
-        }
-      }
-    }
+    wrap.querySelectorAll('.notes-inner input').forEach(inp => {
+      inp.addEventListener('input', () => {
+        if (!state.b5Notes[i]) state.b5Notes[i] = {};
+        state.b5Notes[i][inp.dataset.field] = inp.value;
+      });
+    });
   });
 }
 
-function updateCoolingChart() {
-  if (!coolingChart) return;
-  coolingChart.data.datasets[0].data = [1,2,3,4].map(z => parseFloat(state.coolingData[z].inlet)  || null);
-  coolingChart.data.datasets[1].data = [1,2,3,4].map(z => parseFloat(state.coolingData[z].outlet) || null);
-  coolingChart.update('active');
-  updateCoolingStats();
+// ----------------------------------------------------------------
+// DYNAMIC B5 COOLING ZONES
+// ----------------------------------------------------------------
+function addB5Zone() {
+  state.b5ZonesCount++;
+  state.b5ZonesData.push({ inTemp: '', outTemp: '', flow: '', remark: '' });
+  renderB5Zones();
 }
 
-function updateCoolingStats() {
-  const inlets  = [1,2,3,4].map(z => parseFloat(state.coolingData[z].inlet)  || 0).filter(v => v > 0);
-  const outlets = [1,2,3,4].map(z => parseFloat(state.coolingData[z].outlet) || 0).filter(v => v > 0);
-
-  const avgIn  = inlets.length  ? (inlets.reduce((a,b)=>a+b,0)/inlets.length).toFixed(1)   : '\u2014';
-  const avgOut = outlets.length ? (outlets.reduce((a,b)=>a+b,0)/outlets.length).toFixed(1) : '\u2014';
-  const delta  = (avgIn !== '\u2014' && avgOut !== '\u2014') ? Math.abs(avgIn - avgOut).toFixed(1) : '\u2014';
-
-  const elIn  = document.getElementById('statAvgInlet');
-  const elOut = document.getElementById('statAvgOutlet');
-  const elDel = document.getElementById('statDelta');
-  if (elIn)  elIn.textContent  = avgIn  !== '\u2014' ? avgIn  + '°' : '\u2014';
-  if (elOut) elOut.textContent = avgOut !== '\u2014' ? avgOut + '°' : '\u2014';
-  if (elDel) elDel.textContent = delta  !== '\u2014' ? delta  + '°' : '\u2014';
-}
-
-function buildCoolingInputs() {
-  for (let z = 1; z <= 4; z++) {
-    const inletEl  = document.getElementById(`z${z}_inlet`);
-    const outletEl = document.getElementById(`z${z}_outlet`);
-    if (inletEl) {
-      inletEl.value = state.coolingData[z].inlet || '';
-      inletEl.addEventListener('input', () => {
-        state.coolingData[z].inlet = inletEl.value;
-        updateCoolingChart();
-      });
-    }
-    if (outletEl) {
-      outletEl.value = state.coolingData[z].outlet || '';
-      outletEl.addEventListener('input', () => {
-        state.coolingData[z].outlet = outletEl.value;
-        updateCoolingChart();
-      });
-    }
+function removeB5Zone() {
+  if (state.b5ZonesCount > 1) {
+    state.b5ZonesCount--;
+    state.b5ZonesData.pop();
+    renderB5Zones();
   }
 }
 
-// ================================================================
-// SAVE SECTION (MTER)
-// ================================================================
+function renderB5Zones() {
+  const container = document.getElementById('b5_dynamicZones');
+  if (!container) return;
+  
+  if (state.b5ZonesData.length < state.b5ZonesCount) {
+    for (let i = state.b5ZonesData.length; i < state.b5ZonesCount; i++) {
+      state.b5ZonesData.push({ inTemp: '', outTemp: '', flow: '', remark: '' });
+    }
+  }
+  
+  let html = '';
+  for (let i = 0; i < state.b5ZonesCount; i++) {
+    const d = state.b5ZonesData[i];
+    html += `
+      <div style="background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px;">
+        <h5 style="margin-top: 0; margin-bottom: 12px; font-size: 0.85rem; color: var(--text-dark);">Zona ${i + 1}</h5>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px;">
+          <div class="form-group mb-0">
+            <label class="form-label" style="font-size: 0.75rem;">IN Temp (°C)</label>
+            <input type="number" class="form-input" style="padding: 6px; font-size: 0.8rem;" oninput="state.b5ZonesData[${i}].inTemp = this.value" value="${d.inTemp || ''}" placeholder="0" />
+          </div>
+          <div class="form-group mb-0">
+            <label class="form-label" style="font-size: 0.75rem;">OUT Temp (°C)</label>
+            <input type="number" class="form-input" style="padding: 6px; font-size: 0.8rem;" oninput="state.b5ZonesData[${i}].outTemp = this.value" value="${d.outTemp || ''}" placeholder="0" />
+          </div>
+          <div class="form-group mb-0">
+            <label class="form-label" style="font-size: 0.75rem;">Flow (L/min)</label>
+            <input type="number" class="form-input" style="padding: 6px; font-size: 0.8rem;" oninput="state.b5ZonesData[${i}].flow = this.value" value="${d.flow || ''}" placeholder="0" />
+          </div>
+          <div class="form-group mb-0">
+            <label class="form-label" style="font-size: 0.75rem;">Remark</label>
+            <input type="text" class="form-input" style="padding: 6px; font-size: 0.8rem;" oninput="state.b5ZonesData[${i}].remark = this.value" value="${d.remark || ''}" placeholder="..." />
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  container.innerHTML = html;
+}
+
+// ----------------------------------------------------------------
+// CAVITY LAYOUT — redesigned to match toggle-item style
+// ----------------------------------------------------------------
+function renderCavityList() {
+  const container = document.getElementById('cavityList');
+  if (!container) return;
+  container.innerHTML = '';
+
+  state.cavities.forEach((cav, i) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'toggle-item';
+    const isNG = cav.status === 'ng';
+    const hasData = !!(cav.action || cav.result || cav.remark);
+    const notesOpen = isNG || hasData;
+
+    wrap.innerHTML = `
+      <div class="toggle-item-row">
+        <div class="ti-label">
+          <span class="ti-num" style="border-radius:var(--r-sm);font-size:.65rem;width:26px;height:22px;">C${i + 1}</span>
+          <span class="ti-text" style="font-weight:600;">Cavity ${i + 1}</span>
+        </div>
+        <div class="ti-controls">
+          <button class="cav-tok${cav.status === 'ok' ? ' ok-sel' : ''}" data-s="ok">OK</button>
+          <button class="cav-tok${cav.status === 'ng' ? ' ng-sel' : ''}" data-s="ng">NG</button>
+          <button class="note-icon-btn${notesOpen ? ' is-open' : ''}" title="Tambah Catatan">${NOTE_SVG}</button>
+        </div>
+      </div>
+      <div class="toggle-notes${notesOpen ? ' open' : ''}" id="cav-notes-${i}">
+        <div class="notes-inner">
+          <div class="note-row"><span class="note-row-label">Action</span><input type="text" placeholder="Tindakan yang dilakukan..." value="${cav.action || ''}" data-field="action"/></div>
+          <div class="note-row"><span class="note-row-label">Result</span><input type="text" placeholder="Hasil yang diperoleh..."    value="${cav.result || ''}" data-field="result"/></div>
+          <div class="note-row"><span class="note-row-label">Remark</span><input type="text" placeholder="Catatan tambahan..."         value="${cav.remark || ''}" data-field="remark"/></div>
+        </div>
+      </div>`;
+
+    container.appendChild(wrap);
+
+    // Status toggle
+    wrap.querySelectorAll('.cav-tok').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const val = btn.dataset.s;
+        if (state.cavities[i].status === val) {
+          state.cavities[i].status = '';
+        } else {
+          state.cavities[i].status = val;
+        }
+        // Update DOM for this row only to preserve focus
+        wrap.querySelectorAll('.cav-tok').forEach(b => {
+          b.className = 'cav-tok';
+          if (b.dataset.s === 'ok' && state.cavities[i].status === 'ok') b.classList.add('ok-sel');
+          if (b.dataset.s === 'ng' && state.cavities[i].status === 'ng') b.classList.add('ng-sel');
+        });
+      });
+    });
+
+    // Notes toggle
+    const noteBtn = wrap.querySelector('.note-icon-btn');
+    noteBtn?.addEventListener('click', () => {
+      const notesEl = document.getElementById(`cav-notes-${i}`);
+      const isOpen = notesEl?.classList.contains('open');
+      if (isOpen) { notesEl?.classList.remove('open'); noteBtn.classList.remove('is-open'); }
+      else { notesEl?.classList.add('open'); noteBtn.classList.add('is-open'); setTimeout(() => notesEl?.querySelector('input')?.focus(), 280); }
+    });
+
+    // Save note fields to state
+    wrap.querySelectorAll('.notes-inner input').forEach(inp => {
+      inp.addEventListener('input', () => {
+        state.cavities[i][inp.dataset.field] = inp.value;
+      });
+    });
+  });
+}
+
+// ----------------------------------------------------------------
+// SAVE SECTION
+// ----------------------------------------------------------------
 function saveSection(key) {
-  if (key === 'A') {
-    if (!document.getElementById('trialDate')?.value) {
-      showToast('Tanggal Trial wajib diisi!', 'error'); return;
-    }
-    if (!document.getElementById('moldName')?.value.trim()) {
-      showToast('Nama Mold wajib diisi!', 'error'); return;
-    }
-    if (!document.getElementById('machineSelect')?.value) {
-      showToast('Mesin harus dipilih!', 'error'); return;
-    }
-  }
-  if (key === 'F') {
-    if (!document.getElementById('overallJudgment')?.value) {
-      showToast('Overall Judgment harus dipilih!', 'error'); return;
-    }
-  }
-
-  savedSections[key] = true;
+  state.saved[key] = true;
   buildSidebar();
   localStorage.setItem(`mter-saved-${key}`, '1');
 
-  const btn = document.getElementById(`saveBtn${key}`);
+  const btn = document.querySelector(`[data-save-section="${key}"]`);
   if (btn) {
     const orig = btn.innerHTML;
     btn.classList.add('saved');
     btn.innerHTML = `${CHECK_SVG} Tersimpan!`;
-    setTimeout(() => { btn.classList.remove('saved'); btn.innerHTML = orig; }, 2000);
+    setTimeout(() => { btn.classList.remove('saved'); btn.innerHTML = orig; }, 2200);
   }
-
   showToast(`Section ${key} berhasil disimpan!`, 'success');
 }
 
-// ================================================================
-// PARAMETER BANK — Collect all input field IDs
-// ================================================================
-const PB_FIELD_IDS = [
-  // Temperature
-  'pb_nozzle','pb_front','pb_middle','pb_rear','pb_coolCavity','pb_coolCore','pb_oilTemp',
-  // Injection stages V
-  'pb_v1','pb_v2','pb_v3','pb_v4','pb_v5','pb_v6','pb_v7',
-  // Injection stages P
-  'pb_p1','pb_p2','pb_p3','pb_p4','pb_p5','pb_p6','pb_p7',
-  // Injection stages LS
-  'pb_ls1','pb_ls2','pb_ls3','pb_ls4','pb_ls5','pb_ls6','pb_ls7',
-  // Holding & Plastifikasi
-  'pb_holdPressure','pb_holdTime','pb_screwSpeed','pb_backPress','pb_dosingPos','pb_cushion',
-  // Mould Close
-  'pb_cl1_sp','pb_cl1_pos','pb_cl1_pr',
-  'pb_cl2_sp','pb_cl2_pos','pb_cl2_pr',
-  'pb_cl3_sp','pb_cl3_pos','pb_cl3_pr',
-  // Mould Open
-  'pb_op1_sp','pb_op1_pos','pb_op1_pr',
-  'pb_op2_sp','pb_op2_pos','pb_op2_pr',
-  'pb_op3_sp','pb_op3_pos','pb_op3_pr',
-  // Ejector
-  'pb_ejectFwdSpd','pb_ejectFwdPr','pb_ejectFwdPos',
-  'pb_ejectRetSpd','pb_ejectRetPr','pb_ejectCount',
-  // Cycle
-  'pb_coolingTime','pb_cureTime','pb_injTime','pb_cycleTotal','pb_suckBack'
-];
+// ----------------------------------------------------------------
+// RADIO GROUP
+// ----------------------------------------------------------------
+function initRadioGroup(groupId, stateKey) {
+  const grp = document.getElementById(groupId);
+  if (!grp) return;
+  grp.querySelectorAll('.radio-btn').forEach(btn => {
+    if (btn.dataset.val === state[stateKey]) btn.classList.add('sel');
+    btn.addEventListener('click', () => {
+      state[stateKey] = btn.dataset.val;
+      grp.querySelectorAll('.radio-btn').forEach(b => b.classList.remove('sel'));
+      btn.classList.add('sel');
+    });
+  });
+}
 
+// ----------------------------------------------------------------
+// DYNAMIC MOULD DROPDOWN (localStorage CRUD)
+// ----------------------------------------------------------------
+const MOULD_LS_KEY = 'mter-mould-list';
+
+function getMouldList() {
+  try { return JSON.parse(localStorage.getItem(MOULD_LS_KEY)) || []; }
+  catch { return []; }
+}
+
+function saveMouldList(list) {
+  localStorage.setItem(MOULD_LS_KEY, JSON.stringify(list));
+}
+
+function renderMouldSelect(selectValue) {
+  const sel = document.getElementById('pb_mould');
+  if (!sel) return;
+  const list = getMouldList();
+  const curr = selectValue !== undefined ? selectValue : sel.value;
+  sel.innerHTML = '<option value="">-- Pilih Mould --</option>';
+  list.forEach(m => {
+    const opt = document.createElement('option');
+    opt.value = m;
+    opt.textContent = m;
+    if (m === curr) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  // Always-last static option
+  const addOpt = document.createElement('option');
+  addOpt.value = 'tambah_baru';
+  addOpt.textContent = '[+] Tambah Mould Baru...';
+  sel.appendChild(addOpt);
+}
+
+function initMouldDropdown() {
+  renderMouldSelect('');
+  const sel = document.getElementById('pb_mould');
+  if (!sel) return;
+  sel.addEventListener('change', () => {
+    if (sel.value !== 'tambah_baru') return;
+    const name = prompt('Masukkan nama Mould baru:')?.trim();
+    if (!name) { renderMouldSelect(''); return; }
+    const list = getMouldList();
+    if (list.includes(name)) { showToast('Nama Mould sudah ada.', 'info'); renderMouldSelect(name); return; }
+    list.push(name);
+    saveMouldList(list);
+    renderMouldSelect(name);
+    showToast(`Mould "${name}" berhasil ditambahkan!`, 'success');
+  });
+
+  const delBtn = document.getElementById('pb_mould_del');
+  if (!delBtn) return;
+  delBtn.addEventListener('click', () => {
+    const val = document.getElementById('pb_mould')?.value;
+    if (!val || val === '' || val === 'tambah_baru') {
+      showToast('Pilih Mould yang ingin dihapus terlebih dahulu.', 'info'); return;
+    }
+    if (!confirm(`Hapus Mould "${val}" dari daftar?`)) return;
+    const list = getMouldList().filter(m => m !== val);
+    saveMouldList(list);
+    renderMouldSelect('');
+    showToast(`Mould "${val}" berhasil dihapus.`, 'success');
+  });
+}
+
+// ----------------------------------------------------------------
+// PARAMETER BANK KEY
+// ----------------------------------------------------------------
 function getPBKey() {
-  const machine  = document.getElementById('pb_machine')?.value;
-  const mould    = document.getElementById('pb_mould')?.value;
+  const machine = document.getElementById('pb_machine')?.value;
+  const machCust = document.getElementById('pb_machine_custom')?.value;
+  const mould = document.getElementById('pb_mould')?.value;
   const material = document.getElementById('pb_material')?.value;
-  if (!machine || !mould || !material) return null;
-  // Sanitize key
-  const sanitize = s => s.replace(/[^a-zA-Z0-9\-_]/g, '_');
-  return `paramBank_${sanitize(machine)}_${sanitize(mould)}_${sanitize(material)}`;
+  const matCust = document.getElementById('pb_material_custom')?.value;
+  const mach = machine === 'Lainnya' ? machCust : machine;
+  const mat = material === 'Lainnya' ? matCust : material;
+  if (!mach || !mould || !mat) return null;
+  const s = str => str.replace(/[^a-zA-Z0-9\-_]/g, '_');
+  return `paramBank_${s(mach)}_${s(mould)}_${s(mat)}`;
+}
+
+// ----------------------------------------------------------------
+// DYNAMIC MOULD CLOSE / OPEN
+// ----------------------------------------------------------------
+let mouldCloseRows = 3;
+let mouldOpenRows = 3;
+
+function pbAddMouldRow(type) {
+  if (type === 'close') mouldCloseRows++;
+  else mouldOpenRows++;
+  renderMouldRows(type);
+}
+
+function pbRemoveMouldRow(type) {
+  if (type === 'close' && mouldCloseRows > 1) mouldCloseRows--;
+  else if (type === 'open' && mouldOpenRows > 1) mouldOpenRows--;
+  renderMouldRows(type);
+}
+
+function renderMouldRows(type) {
+  const tbody = document.getElementById(`tbody-mould-${type}`);
+  if (!tbody) return;
+  const count = type === 'close' ? mouldCloseRows : mouldOpenRows;
+  const label = type === 'close' ? 'CL' : 'OP';
+  const labelTxt = type === 'close' ? 'CLOSE' : 'OPEN';
+  
+  let html = `<tr class="pb-group-header">
+                <td colspan="3">
+                  <div style="display: flex; align-items: center; gap: 8px; justify-content: flex-start;">
+                    <span>${labelTxt}</span>
+                    <button type="button" class="pb-btn-add-outline" onclick="pbAddMouldRow('${type}')">+ Tambah ${label}</button>
+                    <button type="button" class="pb-btn-remove-outline" onclick="pbRemoveMouldRow('${type}')">- Kurangi ${label}</button>
+                  </div>
+                </td>
+              </tr>`;
+  
+  for (let i = 1; i <= count; i++) {
+    html += `<tr>
+                <td class="pb-td-label">${label} ${i}</td>
+                <td><input type="number" class="pb-input-sm" id="pb_${type}_sp_${i}" placeholder="0" /></td>
+                <td><input type="number" class="pb-input-sm" id="pb_${type}_pos_${i}" placeholder="0" /></td>
+              </tr>`;
+  }
+  tbody.innerHTML = html;
+}
+
+// ----------------------------------------------------------------
+// CANVAS DRAWING — Cooling Layout Sketch
+// ----------------------------------------------------------------
+let canvasHistory = [];
+let canvasIsDrawing = false;
+let canvasIsPanning = false;
+let canvasStartX = 0;
+let canvasStartY = 0;
+let canvasSnapshot = null;
+
+let canvasTransform = { scale: 1, offsetX: 0, offsetY: 0 };
+let mainOffscreenCanvas = null;
+
+function initCoolingCanvas() {
+  const canvas = document.getElementById('coolingCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  
+  mainOffscreenCanvas = document.createElement('canvas');
+  mainOffscreenCanvas.width = canvas.width;
+  mainOffscreenCanvas.height = canvas.height;
+  const offCtx = mainOffscreenCanvas.getContext('2d');
+  if (!offCtx) return;
+  offCtx.fillStyle = '#ffffff';
+  offCtx.fillRect(0, 0, canvas.width, canvas.height);
+
+  window.loadSketchToCanvas = function(base64) {
+    const img = new Image();
+    img.onload = () => {
+      offCtx.clearRect(0, 0, canvas.width, canvas.height);
+      offCtx.drawImage(img, 0, 0);
+      canvasHistory = []; // Reset history after load
+      redrawToScreen();
+    };
+    img.src = base64;
+  };
+
+  window.getSketchBase64 = function() {
+    return mainOffscreenCanvas ? mainOffscreenCanvas.toDataURL('image/png') : '';
+  };
+
+  function cloneOffscreen(source) {
+    const clone = document.createElement('canvas');
+    clone.width = source.width;
+    clone.height = source.height;
+    clone.getContext('2d').drawImage(source, 0, 0);
+    return clone;
+  }
+
+  function redrawToScreen() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.save();
+    ctx.translate(canvasTransform.offsetX, canvasTransform.offsetY);
+    ctx.scale(canvasTransform.scale, canvasTransform.scale);
+    ctx.drawImage(mainOffscreenCanvas, 0, 0);
+    ctx.restore();
+  }
+
+  redrawToScreen();
+
+  function getPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    let cx, cy;
+    if (e.touches && e.touches.length > 0) {
+      cx = e.touches[0].clientX;
+      cy = e.touches[0].clientY;
+    } else {
+      cx = e.clientX;
+      cy = e.clientY;
+    }
+    const logicalX = (cx - rect.left) * scaleX;
+    const logicalY = (cy - rect.top) * scaleY;
+    
+    return {
+      x: (logicalX - canvasTransform.offsetX) / canvasTransform.scale,
+      y: (logicalY - canvasTransform.offsetY) / canvasTransform.scale
+    };
+  }
+
+  function getTool() { 
+    const activeBtn = document.querySelector('.canvas-tool-btn.active');
+    return activeBtn ? activeBtn.dataset.tool : 'pencil';
+  }
+  function getColor() { return document.getElementById('canvasColor')?.value || '#1e40af'; }
+  function getWidth() { return parseInt(document.getElementById('canvasLineWidth')?.value || '2', 10); }
+  function saveSnapshot() { canvasHistory.push(cloneOffscreen(mainOffscreenCanvas)); }
+
+  let lastDist = 0;
+  let lastPan = {x: 0, y: 0};
+
+  function handleTouchStart(e) {
+    if (e.touches.length === 2) {
+      if (e.cancelable) e.preventDefault();
+      canvasIsDrawing = false;
+      canvasIsPanning = true;
+      lastDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+      lastPan = { x: (e.touches[0].clientX + e.touches[1].clientX)/2, y: (e.touches[0].clientY + e.touches[1].clientY)/2 };
+      return;
+    }
+    if (e.touches.length === 1 && !canvasIsPanning) {
+      startDraw(e);
+    }
+  }
+
+  function handleTouchMove(e) {
+    if (e.touches.length === 2 && canvasIsPanning) {
+      if (e.cancelable) e.preventDefault();
+      const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+      const pan = { x: (e.touches[0].clientX + e.touches[1].clientX)/2, y: (e.touches[0].clientY + e.touches[1].clientY)/2 };
+      
+      if (lastDist > 0) {
+        const zoomDelta = dist / lastDist;
+        const oldScale = canvasTransform.scale;
+        let newScale = oldScale * zoomDelta;
+        newScale = Math.min(Math.max(0.5, newScale), 5);
+        
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const logicalCx = (pan.x - rect.left) * scaleX;
+        const logicalCy = (pan.y - rect.top) * scaleY;
+        
+        canvasTransform.offsetX = logicalCx - (logicalCx - canvasTransform.offsetX) * (newScale / oldScale);
+        canvasTransform.offsetY = logicalCy - (logicalCy - canvasTransform.offsetY) * (newScale / oldScale);
+        canvasTransform.scale = newScale;
+      }
+      
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      canvasTransform.offsetX += (pan.x - lastPan.x) * scaleX;
+      canvasTransform.offsetY += (pan.y - lastPan.y) * scaleY;
+      
+      lastDist = dist;
+      lastPan = pan;
+      redrawToScreen();
+      return;
+    }
+    if (e.touches.length === 1 && !canvasIsPanning) {
+      draw(e);
+    }
+  }
+
+  function handleTouchEnd(e) {
+    if (e.touches.length < 2) {
+      canvasIsPanning = false;
+      lastDist = 0;
+    }
+    if (e.touches.length === 0) {
+      endDraw(e);
+    }
+  }
+
+  canvas.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const oldScale = canvasTransform.scale;
+    const zoomDelta = e.deltaY > 0 ? 0.9 : 1.1;
+    let newScale = oldScale * zoomDelta;
+    newScale = Math.min(Math.max(0.5, newScale), 5);
+    
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const logicalCx = (e.clientX - rect.left) * scaleX;
+    const logicalCy = (e.clientY - rect.top) * scaleY;
+    
+    canvasTransform.offsetX = logicalCx - (logicalCx - canvasTransform.offsetX) * (newScale / oldScale);
+    canvasTransform.offsetY = logicalCy - (logicalCy - canvasTransform.offsetY) * (newScale / oldScale);
+    canvasTransform.scale = newScale;
+    redrawToScreen();
+  }, { passive: false });
+
+  function setupCtx(context) {
+    context.strokeStyle = getColor();
+    context.lineWidth = getWidth();
+    context.lineCap = 'round';
+    context.lineJoin = 'round';
+    if (getTool() === 'eraser') {
+      context.globalCompositeOperation = 'destination-out';
+    } else {
+      context.globalCompositeOperation = 'source-over';
+    }
+  }
+
+  function startDraw(e) {
+    if (e.cancelable) e.preventDefault();
+    canvasIsDrawing = true;
+    const pos = getPos(e);
+    canvasStartX = pos.x;
+    canvasStartY = pos.y;
+    saveSnapshot();
+    canvasSnapshot = cloneOffscreen(mainOffscreenCanvas);
+    
+    setupCtx(offCtx);
+    if (getTool() === 'pencil' || getTool() === 'eraser') {
+      offCtx.beginPath();
+      offCtx.moveTo(pos.x, pos.y);
+    }
+  }
+
+  function draw(e) {
+    if (!canvasIsDrawing) return;
+    if (e.cancelable) e.preventDefault();
+    const pos = getPos(e);
+    const tool = getTool();
+    setupCtx(offCtx);
+
+    if (tool === 'pencil' || tool === 'eraser') {
+      offCtx.lineTo(pos.x, pos.y);
+      offCtx.stroke();
+    } else {
+      offCtx.globalCompositeOperation = 'source-over';
+      offCtx.clearRect(0, 0, canvas.width, canvas.height);
+      offCtx.drawImage(canvasSnapshot, 0, 0);
+      setupCtx(offCtx);
+
+      offCtx.beginPath();
+      if (tool === 'line') {
+        offCtx.moveTo(canvasStartX, canvasStartY);
+        offCtx.lineTo(pos.x, pos.y);
+        offCtx.stroke();
+      } else if (tool === 'rect') {
+        offCtx.strokeRect(canvasStartX, canvasStartY, pos.x - canvasStartX, pos.y - canvasStartY);
+      } else if (tool === 'circle') {
+        const rx = (pos.x - canvasStartX) / 2;
+        const ry = (pos.y - canvasStartY) / 2;
+        const cx = canvasStartX + rx;
+        const cy = canvasStartY + ry;
+        offCtx.ellipse(cx, cy, Math.abs(rx), Math.abs(ry), 0, 0, 2 * Math.PI);
+        offCtx.stroke();
+      }
+    }
+    redrawToScreen();
+  }
+
+  function endDraw(e) {
+    if (!canvasIsDrawing) return;
+    if (e.cancelable) e.preventDefault();
+    canvasIsDrawing = false;
+    const tool = getTool();
+    if (tool === 'pencil' || tool === 'eraser') {
+      offCtx.closePath();
+    }
+    offCtx.globalCompositeOperation = 'source-over';
+    redrawToScreen();
+  }
+
+  canvas.addEventListener('mousedown',  startDraw);
+  canvas.addEventListener('mousemove',  draw);
+  canvas.addEventListener('mouseup',    endDraw);
+  canvas.addEventListener('mouseleave', endDraw);
+  
+  canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+  canvas.addEventListener('touchmove',  handleTouchMove,  { passive: false });
+  canvas.addEventListener('touchend',   handleTouchEnd,   { passive: false });
+  canvas.addEventListener('touchcancel',handleTouchEnd,   { passive: false });
+
+  document.getElementById('canvasUndo')?.addEventListener('click', () => {
+    if (canvasHistory.length > 0) {
+      offCtx.clearRect(0, 0, canvas.width, canvas.height);
+      offCtx.drawImage(canvasHistory.pop(), 0, 0);
+      redrawToScreen();
+    } else {
+      showToast('Tidak ada yang bisa di-undo.', 'info');
+    }
+  });
+
+  const toolBtns = document.querySelectorAll('.canvas-tool-btn');
+  toolBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      toolBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+
+  document.getElementById('canvasClear')?.addEventListener('click', () => {
+    saveSnapshot();
+    offCtx.fillStyle = '#ffffff';
+    offCtx.fillRect(0, 0, canvas.width, canvas.height);
+    redrawToScreen();
+    showToast('Canvas dikosongkan.', 'info');
+  });
+
+  document.getElementById('canvasResetView')?.addEventListener('click', () => {
+    canvasTransform = { scale: 1, offsetX: 0, offsetY: 0 };
+    redrawToScreen();
+  });
+
+  document.getElementById('canvasLineWidth')?.addEventListener('input', function() {
+    const d = document.getElementById('canvasLineWidthDisplay');
+    if (d) d.textContent = this.value;
+  });
+
+  document.getElementById('saveSketchBtn')?.addEventListener('click', () => {
+    const key = getPBKey();
+    if (!key) { showToast('Pilih Mesin, Mould, dan Material terlebih dahulu (di tab Parameter Bank)!', 'error'); return; }
+    
+    let existingData = localStorage.getItem(key);
+    let pbData = existingData ? JSON.parse(existingData) : {};
+    
+    pbData.canvasSketch = mainOffscreenCanvas.toDataURL('image/png');
+    localStorage.setItem(key, JSON.stringify(pbData));
+    showToast('Sketsa Cooling Layout berhasil disimpan!', 'success');
+  });
 }
 
 function saveParamBank() {
   const key = getPBKey();
-  if (!key) {
-    showToast('Pilih Mesin, Mould, dan Material terlebih dahulu!', 'error');
-    return;
+  if (!key) { showToast('Pilih Mesin, Mould, dan Material terlebih dahulu!', 'error'); return; }
+  const data = {};
+  PB_FIELD_IDS.forEach(id => { const el = document.getElementById(id); data[id] = el ? el.value : ''; });
+  
+  // Save dynamic rows
+  data.mouldCloseRows = mouldCloseRows;
+  data.mouldOpenRows = mouldOpenRows;
+  data.mouldCloseData = [];
+  data.mouldOpenData = [];
+  
+  for (let i = 1; i <= mouldCloseRows; i++) {
+    data.mouldCloseData.push({
+      sp: document.getElementById(`pb_close_sp_${i}`)?.value || '',
+      pos: document.getElementById(`pb_close_pos_${i}`)?.value || ''
+    });
+  }
+  
+  for (let i = 1; i <= mouldOpenRows; i++) {
+    data.mouldOpenData.push({
+      sp: document.getElementById(`pb_open_sp_${i}`)?.value || '',
+      pos: document.getElementById(`pb_open_pos_${i}`)?.value || ''
+    });
   }
 
-  const data = {};
-  PB_FIELD_IDS.forEach(id => {
-    const el = document.getElementById(id);
-    data[id] = el ? el.value : '';
-  });
+  // Save B5 zones
+  data.b5ZonesCount = state.b5ZonesCount;
+  data.b5ZonesData  = state.b5ZonesData;
+
+  // Save canvas sketch as Base64
+  const canvas = document.getElementById('coolingCanvas');
+  if (canvas) data.canvasSketch = canvas.toDataURL('image/png');
 
   localStorage.setItem(key, JSON.stringify(data));
-  showToast(`Parameter tersimpan untuk ${document.getElementById('pb_machine').value} / ${document.getElementById('pb_mould').value} / ${document.getElementById('pb_material').value}`, 'success');
+  showToast('Parameter berhasil disimpan!', 'success');
 }
 
 function loadParamBank() {
   const key = getPBKey();
-  if (!key) {
-    showToast('Pilih Mesin, Mould, dan Material terlebih dahulu!', 'error');
-    return;
-  }
-
+  if (!key) { showToast('Pilih Mesin, Mould, dan Material terlebih dahulu!', 'error'); return; }
   const raw = localStorage.getItem(key);
   if (!raw) {
-    // Clear all fields
-    PB_FIELD_IDS.forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.value = '';
-    });
+    PB_FIELD_IDS.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    mouldCloseRows = 3; mouldOpenRows = 3;
+    renderMouldRows('close'); renderMouldRows('open');
     showToast('Data parameter belum tersedia untuk kombinasi ini.', 'info');
     return;
   }
-
   try {
     const data = JSON.parse(raw);
-    PB_FIELD_IDS.forEach(id => {
-      const el = document.getElementById(id);
-      if (el && data[id] !== undefined) el.value = data[id];
-    });
-    showToast(`Parameter berhasil dimuat untuk ${document.getElementById('pb_machine').value} / ${document.getElementById('pb_mould').value} / ${document.getElementById('pb_material').value}`, 'success');
-  } catch(e) {
-    showToast('Gagal membaca data parameter. Data mungkin rusak.', 'error');
-  }
+    PB_FIELD_IDS.forEach(id => { const el = document.getElementById(id); if (el && data[id] !== undefined) el.value = data[id]; });
+    
+    // Load dynamic rows
+    mouldCloseRows = data.mouldCloseRows || 3;
+    mouldOpenRows = data.mouldOpenRows || 3;
+    renderMouldRows('close');
+    renderMouldRows('open');
+    
+    if (data.mouldCloseData) {
+      for (let i = 1; i <= mouldCloseRows; i++) {
+        const rowData = data.mouldCloseData[i-1];
+        if (rowData) {
+          const spEl = document.getElementById(`pb_close_sp_${i}`);
+          const posEl = document.getElementById(`pb_close_pos_${i}`);
+          if (spEl) spEl.value = rowData.sp;
+          if (posEl) posEl.value = rowData.pos;
+        }
+      }
+    }
+    
+    if (data.mouldOpenData) {
+      for (let i = 1; i <= mouldOpenRows; i++) {
+        const rowData = data.mouldOpenData[i-1];
+        if (rowData) {
+          const spEl = document.getElementById(`pb_open_sp_${i}`);
+          const posEl = document.getElementById(`pb_open_pos_${i}`);
+          if (spEl) spEl.value = rowData.sp;
+          if (posEl) posEl.value = rowData.pos;
+        }
+      }
+    }
+
+    // Load B5 zones
+    if (data.b5ZonesData) {
+      state.b5ZonesCount = data.b5ZonesCount || 4;
+      state.b5ZonesData  = data.b5ZonesData;
+      renderB5Zones();
+    }
+
+    // Load canvas sketch from Base64
+    if (data.canvasSketch && typeof window.loadSketchToCanvas === 'function') {
+      window.loadSketchToCanvas(data.canvasSketch);
+    }
+
+    showToast('Parameter berhasil dimuat!', 'success');
+  } catch (e) { showToast('Gagal membaca data parameter.', 'error'); }
 }
 
-// ================================================================
+// ----------------------------------------------------------------
 // TOAST
-// ================================================================
+// ----------------------------------------------------------------
 function showToast(msg, type = 'info') {
   const stack = document.getElementById('toastStack');
   if (!stack) return;
-
-  let iconSVG = '';
-  if (type === 'success') iconSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
-  else if (type === 'error') iconSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
-  else iconSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
-
+  const icons = {
+    success: '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+    error: '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+    info: '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
+  };
   const t = document.createElement('div');
   t.className = `toast ${type}`;
-  t.innerHTML = `<span class="toast-icon">${iconSVG}</span><span>${msg}</span>`;
+  t.innerHTML = `<span class="toast-icon">${icons[type] || icons.info}</span><span>${msg}</span>`;
   stack.appendChild(t);
   setTimeout(() => t.parentNode?.removeChild(t), 3100);
 }
 
-// ================================================================
-// EXPORT REPORT (html2pdf.js)
-// ================================================================
+// ----------------------------------------------------------------
+// EXPORT PDF — Full Report
+// ----------------------------------------------------------------
 function exportReport() {
-  if (typeof html2pdf === 'undefined') {
-    showToast('Library export belum siap, coba refresh.', 'error');
-    return;
-  }
-
-  buildPrintLayout();
-  const el = document.getElementById('printLayout');
-  el.style.display = 'block';
-
-  const moldName = document.getElementById('moldName')?.value || 'MOLD-XXX';
-  const today = new Date().toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' });
-
-  const opt = {
-    margin:       [12, 10, 12, 10],
-    filename:     `MTER_Report_${moldName}_${today}.pdf`,
-    image:        { type: 'jpeg', quality: 0.97 },
-    html2canvas:  { scale: 2, useCORS: true, logging: false },
-    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
-    pagebreak:    { mode: 'css', avoid: ['.print-section-wrap', 'tr'] }
-  };
-
-  html2pdf().set(opt).from(el).save().then(() => {
-    el.style.display = 'none';
-    showToast('PDF berhasil diunduh!', 'success');
-  });
-}
-
-function buildPrintLayout() {
+  showToast('Menyiapkan PDF...', 'info');
   const el = document.getElementById('printLayout');
   if (!el) return;
 
-  const v = (id) => document.getElementById(id)?.value || '—';
-  const today = new Date().toLocaleDateString('id-ID', { day:'2-digit', month:'long', year:'numeric' });
-  const moldName = v('moldName');
-  const trialNum = v('trialNumber');
+  const v = id => document.getElementById(id)?.value || '-';
 
-  const idFields = [
-    ['Tanggal Trial', v('trialDate')],  ['Trial Ke-', `#${trialNum}`],
-    ['Nama Mold',    moldName],         ['Part Name',   v('partName')],
-    ['Part Number',  v('partNumber')],  ['Customer',    v('customer')],
-    ['Mesin',        v('machineSelect')],['Tonnage',     v('tonnage') ? v('tonnage')+'T' : '—'],
-    ['Material',     v('resinMaterial')],['Warna',       v('materialColor')],
-    ['Jml Cavity',   v('cavityCount')], ['Cycle Target', v('cycleTarget') ? v('cycleTarget')+'s' : '—'],
-    ['PIC',          v('inspector')],   ['Judgment',     v('overallJudgment') || '—']
-  ];
+  // Collect canvas sketch
+  const canvas = document.getElementById('coolingCanvas');
+  const canvasDataUrl = typeof window.getSketchBase64 === 'function' ? window.getSketchBase64() : (canvas ? canvas.toDataURL('image/png') : '');
+  const canvasImgHtml = canvasDataUrl ? `<img src="${canvasDataUrl}" style="max-width:100%; border:1px solid #e5e7eb; border-radius:6px; margin-top:8px;" />` : '<em style="color:#9ca3af;">Tidak ada sketsa.</em>';
 
-  let idHTML = '';
-  for (let i = 0; i < idFields.length; i += 2) {
-    idHTML += `<div class="print-id-row">
-      <div class="print-id-cell"><span class="print-id-label">${idFields[i][0]}</span><span class="print-id-value">${idFields[i][1]}</span></div>
-      <div class="print-id-cell"><span class="print-id-label">${idFields[i+1]?.[0]||''}</span><span class="print-id-value">${idFields[i+1]?.[1]||''}</span></div>
-    </div>`;
-  }
+  // Helper: render toggle-state badge
+  const badge = (val) => {
+    if (val === 'OK') return `<span style="background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:4px;font-weight:700;">OK</span>`;
+    if (val === 'NG') return `<span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:4px;font-weight:700;">NG</span>`;
+    if (val === 'YES') return `<span style="background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:4px;font-weight:700;">YES</span>`;
+    if (val === 'NO') return `<span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:4px;font-weight:700;">NO</span>`;
+    return `<span style="color:#9ca3af;">-</span>`;
+  };
 
-  let mechRows = '';
-  MOLD_MECH_ITEMS.forEach((item, i) => {
-    const s = state.moldMech[i] || '—';
-    const n = state.moldMechNotes[i] || {};
-    const cls = s === 'OK' ? 'status-ok' : s === 'NG' ? 'status-ng' : '';
-    mechRows += `<tr><td class="col-no">${i+1}</td><td>${item}</td><td class="col-stat ${cls}">${s}</td><td>${n.action||''}</td><td>${n.result||''}</td><td>${n.remark||''}</td></tr>`;
-  });
+  // Helper: build toggle-item rows for a section
+  const buildToggleRows = (items, stateObj, notesObj) => {
+    return items.map((item, i) => {
+      const s = stateObj[i] || '';
+      const n = notesObj[i] || {};
+      const notes = [n.action ? `Action: ${n.action}` : '', n.result ? `Result: ${n.result}` : '', n.remark ? `Remark: ${n.remark}` : ''].filter(Boolean).join(' | ');
+      return `<tr>
+        <td style="width:32px;text-align:center;color:#6b7280;">${i+1}</td>
+        <td>${item}</td>
+        <td style="text-align:center;">${badge(s)}</td>
+        <td style="color:#6b7280;font-size:.8rem;">${notes || '-'}</td>
+      </tr>`;
+    }).join('');
+  };
 
-  let demoRows = '';
-  DEMOULDING_ITEMS.forEach((item, i) => {
-    const s = state.demoulding[i] || '—';
-    const n = state.demouldingNotes[i] || {};
-    const cls = s === 'YES' ? 'status-yes' : s === 'NO' ? 'status-no' : '';
-    demoRows += `<tr><td class="col-no">${i+1}</td><td>${item}</td><td class="col-stat ${cls}">${s}</td><td>${n.action||''}</td><td>${n.result||''}</td><td>${n.remark||''}</td></tr>`;
-  });
+  // Helper: build NO/YES rows for section C
+  const buildToggleRowsNY = (items, stateObj, notesObj) => {
+    return items.map((item, i) => {
+      const s = stateObj[i] || '';
+      const n = notesObj[i] || {};
+      const notes = [n.action ? `Action: ${n.action}` : '', n.result ? `Result: ${n.result}` : '', n.remark ? `Remark: ${n.remark}` : ''].filter(Boolean).join(' | ');
+      return `<tr>
+        <td style="width:32px;text-align:center;color:#6b7280;">${i+1}</td>
+        <td>${item}</td>
+        <td style="text-align:center;">${badge(s)}</td>
+        <td style="color:#6b7280;font-size:.8rem;">${notes || '-'}</td>
+      </tr>`;
+    }).join('');
+  };
 
-  let aesRows = '';
-  AESTHETIC_ITEMS.forEach((item, i) => {
-    const s = state.aesthetic[i] || '—';
-    const n = state.aestheticNotes[i] || {};
-    const cls = s === 'OK' ? 'status-ok' : s === 'NG' ? 'status-ng' : '';
-    aesRows += `<tr><td class="col-no">${i+1}</td><td>${item}</td><td class="col-stat ${cls}">${s}</td><td>${n.action||''}</td><td>${n.result||''}</td><td>${n.remark||''}</td></tr>`;
-  });
+  // Mould Close / Open rows
+  const closeRows = Array.from({ length: mouldCloseRows }, (_, i) => {
+    const sp  = document.getElementById(`pb_close_sp_${i+1}`)?.value || '-';
+    const pos = document.getElementById(`pb_close_pos_${i+1}`)?.value || '-';
+    return `<tr><td>CL ${i+1}</td><td>${sp}</td><td>${pos}</td></tr>`;
+  }).join('');
+  const openRows = Array.from({ length: mouldOpenRows }, (_, i) => {
+    const sp  = document.getElementById(`pb_open_sp_${i+1}`)?.value || '-';
+    const pos = document.getElementById(`pb_open_pos_${i+1}`)?.value || '-';
+    return `<tr><td>OP ${i+1}</td><td>${sp}</td><td>${pos}</td></tr>`;
+  }).join('');
 
-  const cavCount = parseInt(document.getElementById('cavityCount')?.value) || 4;
-  let cavCells = '';
-  for (let i = 1; i <= cavCount; i++) {
-    const s = state.cavities[i] || '';
-    cavCells += `<div class="print-cavity-cell ${s}">C${i}<br>${s ? s.toUpperCase() : '—'}</div>`;
-  }
+  // B5 Cooling Zone rows
+  const b5ZoneRows = state.b5ZonesData.slice(0, state.b5ZonesCount).map((z, i) => `
+    <tr>
+      <td>Zona ${i+1}</td>
+      <td>${z.inTemp || '-'}</td>
+      <td>${z.outTemp || '-'}</td>
+      <td>${z.flow || '-'}</td>
+      <td>${z.remark || '-'}</td>
+    </tr>`).join('');
 
-  let coolRows = '';
-  for (let z = 1; z <= 4; z++) {
-    const inlet  = parseFloat(state.coolingData[z].inlet)  || null;
-    const outlet = parseFloat(state.coolingData[z].outlet) || null;
-    const delta  = (inlet !== null && outlet !== null) ? Math.abs(outlet - inlet).toFixed(1) : '—';
-    const dCls   = delta !== '—' && parseFloat(delta) > 3 ? 'delta-high' : 'delta-ok';
-    coolRows += `<tr><td>Zona ${z}</td><td>${inlet !== null ? inlet+'°C' : '—'}</td><td>${outlet !== null ? outlet+'°C' : '—'}</td><td class="${dCls}">${delta !== '—' ? delta+'°C' : '—'}</td></tr>`;
-  }
+  // Cavity rows
+  const cavityRows = state.cavities.map((cav, i) => {
+    const statusLabel = cav.status === 'ok' ? `<span style="background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:4px;font-weight:700;">OK</span>` :
+                        cav.status === 'ng' ? `<span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:4px;font-weight:700;">NG</span>` : '-';
+    return `<tr>
+      <td style="text-align:center;">C${i+1}</td>
+      <td style="text-align:center;">${statusLabel}</td>
+      <td>${cav.action || '-'}</td>
+      <td>${cav.result || '-'}</td>
+      <td>${cav.remark || '-'}</td>
+    </tr>`;
+  }).join('');
 
-  const judgment = v('overallJudgment');
-  const jColor = judgment === 'APPROVED' ? '#059669' : judgment === 'REJECTED' ? '#DC2626' : '#D97706';
+  const sec = (title) => `<div class="print-sec-title">${title}</div>`;
+  const tblHead = (...cols) => `<thead><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead>`;
 
-  el.innerHTML = `
-    <div class="print-page">
-      <div class="print-header">
-        <div class="print-header-left">
-          <img class="print-logo" src="Logo.png" alt="ALBEA" onerror="this.style.display='none'" />
-          <div class="print-title">
-            <h1>Mold Trial Evaluation Report</h1>
-            <p>MTER Smart Checksheet — Digital Inspection Record</p>
-          </div>
-        </div>
-        <div class="print-doc-num">
-          <div><strong>Doc No:</strong> MTER-${moldName}-${trialNum}</div>
-          <div><strong>Date:</strong> ${today}</div>
-          <div><strong>Rev:</strong> 00</div>
-        </div>
+  el.innerHTML = `<div class="print-page">
+    <!-- HEADER -->
+    <div class="print-header">
+      <div class="print-header-left">
+        <img class="print-logo" src="Logo.png" alt="ALBEA" onerror="this.style.display='none'"/>
+        <div class="print-title"><h1>Mold Trial Evaluation Report</h1><p>MTER Smart Checksheet v5.0</p></div>
       </div>
-
-      <div class="print-section-wrap">
-        <div class="print-sec-title">A — Identitas Trial</div>
-        <div class="print-identity">${idHTML}</div>
-      </div>
-
-      <div class="print-section-wrap">
-        <div class="print-sec-title">B — Mold Mechanism Condition</div>
-        <table class="print-table">
-          <thead><tr><th class="col-no">No</th><th>Checking Item</th><th class="col-stat">Status</th><th>Action</th><th>Result</th><th>Remark</th></tr></thead>
-          <tbody>${mechRows}</tbody>
-        </table>
-      </div>
-
-      <div class="print-section-wrap">
-        <div class="print-sec-title">C — Demoulding Condition</div>
-        <table class="print-table">
-          <thead><tr><th class="col-no">No</th><th>Checking Item</th><th class="col-stat">Found?</th><th>Action</th><th>Result</th><th>Remark</th></tr></thead>
-          <tbody>${demoRows}</tbody>
-        </table>
-      </div>
-
-      <div class="print-section-wrap">
-        <div class="print-sec-title">D — Product Aesthetic Evaluation</div>
-        <table class="print-table">
-          <thead><tr><th class="col-no">No</th><th>Defect Type</th><th class="col-stat">Status</th><th>Action</th><th>Result</th><th>Remark</th></tr></thead>
-          <tbody>${aesRows}</tbody>
-        </table>
-      </div>
-
-      <div class="print-section-wrap">
-        <div class="print-sec-title">E — Cavity Layout Status</div>
-        <div class="print-cavity-grid">${cavCells}</div>
-      </div>
-
-      <div class="print-section-wrap">
-        <div class="print-sec-title">G — Cooling Channel Analysis</div>
-        <table class="print-cooling-table">
-          <thead><tr><th>Zone</th><th>Inlet Temp</th><th>Outlet Temp</th><th>Delta T</th></tr></thead>
-          <tbody>${coolRows}</tbody>
-        </table>
-      </div>
-
-      <div class="print-section-wrap">
-        <div class="print-sec-title">F — Conclusion &amp; Judgment</div>
-        <div style="border:2px solid ${jColor};border-radius:6px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;gap:12px;">
-          <span style="font-size:14pt;font-weight:800;color:${jColor};">${judgment || '—'}</span>
-          <div style="flex:1;font-size:7.5pt;color:#475569;">${document.getElementById('conclusionNotes')?.value || 'Tidak ada catatan.'}</div>
-        </div>
-        ${document.getElementById('generalNotes')?.value ? `<p style="font-size:7pt;color:#475569;"><strong>Catatan Umum:</strong> ${document.getElementById('generalNotes').value}</p>` : ''}
-      </div>
-
-      <div class="print-section-wrap">
-        <div class="print-signatures">
-          <div class="print-sig-box">
-            <div class="print-sig-role">Dibuat oleh (Inspector)</div>
-            <div class="print-sig-line"><div class="print-sig-name">${v('inspector')}</div></div>
-          </div>
-          <div class="print-sig-box">
-            <div class="print-sig-role">Diperiksa oleh (QC)</div>
-            <div class="print-sig-line"><div class="print-sig-name">................................</div></div>
-          </div>
-          <div class="print-sig-box">
-            <div class="print-sig-role">Disetujui oleh (Manager)</div>
-            <div class="print-sig-line"><div class="print-sig-name">................................</div></div>
-          </div>
-        </div>
+      <div class="print-doc-num">
+        <div><strong>Date:</strong> ${new Date().toLocaleDateString('id-ID')}</div>
+        <div><strong>Trial No:</strong> ${v('hi_trialNumber')}</div>
       </div>
     </div>
-  `;
+
+    <!-- HEADER INFORMASI -->
+    <div class="print-section-wrap">
+      ${sec('Header Informasi')}
+      <table class="print-table">${tblHead('Field','Value')}<tbody>
+        <tr><td class="pb-td-label">Trial Number</td><td>${v('hi_trialNumber')}</td></tr>
+        <tr><td class="pb-td-label">Date</td><td>${v('hi_date')}</td></tr>
+        <tr><td class="pb-td-label">Prepared</td><td>${v('hi_prepared')}</td></tr>
+        <tr><td class="pb-td-label">Reviewed</td><td>${v('hi_reviewed')}</td></tr>
+        <tr><td class="pb-td-label">Approved</td><td>${v('hi_approved')}</td></tr>
+        <tr><td class="pb-td-label">Product Code</td><td>${v('hi_productCode')}</td></tr>
+        <tr><td class="pb-td-label">Mold Code</td><td>${v('hi_moldCode')}</td></tr>
+        <tr><td class="pb-td-label">Product Name</td><td>${v('hi_productName')}</td></tr>
+        <tr><td class="pb-td-label">Mold Maker</td><td>${v('hi_moldMaker')}</td></tr>
+        <tr><td class="pb-td-label">Part Name</td><td>${v('hi_partName')}</td></tr>
+        <tr><td class="pb-td-label">Mold Status</td><td>${state.moldStatus || '-'}</td></tr>
+        <tr><td class="pb-td-label">Resin</td><td>${v('hi_resin')}</td></tr>
+        <tr><td class="pb-td-label">Brand / Grade</td><td>${v('hi_brandGrade')}</td></tr>
+      </tbody></table>
+    </div>
+
+    <!-- PARAMETER BANK -->
+    <div class="print-section-wrap">
+      ${sec('Parameter Bank — General Information')}
+      <table class="print-table">${tblHead('Field','Value')}<tbody>
+        <tr><td class="pb-td-label">Tanggal</td><td>${v('pb_tanggal')}</td></tr>
+        <tr><td class="pb-td-label">Mesin</td><td>${v('pb_machine') === 'Lainnya' ? v('pb_machine_custom') : v('pb_machine')}</td></tr>
+        <tr><td class="pb-td-label">Nama Mould</td><td>${v('pb_mould')}</td></tr>
+        <tr><td class="pb-td-label">Cavity</td><td>${v('pb_cavity')}</td></tr>
+        <tr><td class="pb-td-label">Produksi</td><td>${v('pb_produksi')}</td></tr>
+        <tr><td class="pb-td-label">Material</td><td>${v('pb_material') === 'Lainnya' ? v('pb_material_custom') : v('pb_material')}</td></tr>
+        <tr><td class="pb-td-label">Berat Shoot (g)</td><td>${v('pb_berat_shoot')}</td></tr>
+        <tr><td class="pb-td-label">Berat Unit (g)</td><td>${v('pb_berat_unit')}</td></tr>
+        <tr><td class="pb-td-label">Berat Runner (g)</td><td>${v('pb_berat_runner')}</td></tr>
+        <tr><td class="pb-td-label">Cycle Time (s)</td><td>${v('pb_cycleTime')}</td></tr>
+      </tbody></table>
+
+      ${sec('Temperatur & Heater (°C)')}
+      <table class="print-table">${tblHead('Parameter','Nilai')}<tbody>
+        <tr><td>Nozzle</td><td>${v('pb_nozzle')}</td></tr>
+        <tr><td>Front</td><td>${v('pb_front')}</td></tr>
+        <tr><td>Middle</td><td>${v('pb_middle')}</td></tr>
+        <tr><td>Rear</td><td>${v('pb_rear')}</td></tr>
+        <tr><td>Hopper Dryer</td><td>${v('pb_hopper')}</td></tr>
+        <tr><td>Cooling Cavity</td><td>${v('pb_coolCavity')}</td></tr>
+        <tr><td>Cooling Core</td><td>${v('pb_coolCore')}</td></tr>
+        <tr><td>Oil Temp</td><td>${v('pb_oilTemp')}</td></tr>
+        <tr><td>Heater 1-4</td><td>${v('pb_heater1')} / ${v('pb_heater2')} / ${v('pb_heater3')} / ${v('pb_heater4')}</td></tr>
+        <tr><td>Block / HN Sprue</td><td>${v('pb_block')} / ${v('pb_hnSprue')}</td></tr>
+      </tbody></table>
+
+      ${sec('Injection Data (Stage 1–7)')}
+      <table class="print-table">
+        ${tblHead('Stage','V (mm/s)','P (bar)','LS (mm)')}
+        <tbody>${[1,2,3,4,5,6,7].map(s=>`<tr>
+          <td style="text-align:center;">${s}</td>
+          <td>${v('pb_v'+s)}</td><td>${v('pb_p'+s)}</td><td>${v('pb_ls'+s)}</td>
+        </tr>`).join('')}</tbody>
+      </table>
+
+      ${sec('Holding Pressure')}
+      <table class="print-table">
+        ${tblHead('Stage','P (bar)','T (s)')}
+        <tbody>${[5,4,3,2,1].map(s=>`<tr>
+          <td style="text-align:center;">P${s}</td>
+          <td>${v('pb_hold_p'+s)}</td><td>${v('pb_hold_t'+s)}</td>
+        </tr>`).join('')}</tbody>
+      </table>
+
+      ${sec('Plastifikasi & Melt Decomp')}
+      <table class="print-table">${tblHead('Parameter','Nilai')}<tbody>
+        <tr><td>Screw Speed</td><td>${v('pb_screwSpeed')} rpm</td></tr>
+        <tr><td>Back Pressure</td><td>${v('pb_backPress')} bar</td></tr>
+        <tr><td>Dosing Position</td><td>${v('pb_dosingPos')} mm</td></tr>
+        <tr><td>Speed VSB</td><td>${v('pb_vsb')} mm/s</td></tr>
+        <tr><td>Stroke LSB</td><td>${v('pb_lsb')} mm</td></tr>
+      </tbody></table>
+
+      ${sec('Ejector')}
+      <table class="print-table">${tblHead('Parameter','Nilai')}<tbody>
+        <tr><td>Knock Out No</td><td>${v('pb_ej_ko')}</td></tr>
+        <tr><td>Semi-Auto</td><td>${v('pb_ej_semi')}</td></tr>
+        <tr><td>Standard</td><td>${v('pb_ej_std')}</td></tr>
+        <tr><td>Pre-Eject</td><td>${v('pb_ej_pre')}</td></tr>
+      </tbody></table>
+
+      ${sec('Cycle Time & Timing')}
+      <table class="print-table">${tblHead('Parameter','Nilai')}<tbody>
+        <tr><td>Cooling Time</td><td>${v('pb_coolingTime')} s</td></tr>
+        <tr><td>Cure Time</td><td>${v('pb_cureTime')} s</td></tr>
+        <tr><td>Injection Time</td><td>${v('pb_injTime')} s</td></tr>
+        <tr><td>Suck Back</td><td>${v('pb_suckBack')} mm</td></tr>
+      </tbody></table>
+    </div>
+
+    <!-- MOULD CLOSE / OPEN -->
+    <div class="print-section-wrap">
+      ${sec('Mould Close / Open')}
+      <table class="print-table">${tblHead('Step','SP','Position')}<tbody>
+        ${closeRows}${openRows}
+      </tbody></table>
+    </div>
+
+    <!-- COOLING CHANNEL ZONES -->
+    <div class="print-section-wrap">
+      ${sec('Cooling Channel Zones')}
+      <table class="print-table">${tblHead('Zona','IN Temp (°C)','OUT Temp (°C)','Flow (L/min)','Remark')}<tbody>
+        ${b5ZoneRows || '<tr><td colspan="5" style="text-align:center;color:#9ca3af;">Tidak ada data zona.</td></tr>'}
+      </tbody></table>
+    </div>
+
+    <!-- COOLING LAYOUT SKETCH -->
+    <div class="print-section-wrap" style="page-break-before: always; break-before: page;">
+      ${sec('Cooling Layout Sketch')}
+      ${canvasImgHtml}
+    </div>
+
+    <!-- MTER CHECKSHEET B.1–B.9 -->
+    <div class="print-section-wrap">
+      ${sec('B.1 — Opening Mechanism')}
+      <table class="print-table">${tblHead('#','Item','Status','Notes')}<tbody>${buildToggleRows(B1_OPENING, state.b1, state.b1Notes)}</tbody></table>
+
+      ${sec('B.2 — Slider Mechanism')}
+      <table class="print-table">${tblHead('#','Item','Status','Notes')}<tbody>${buildToggleRows(B2_SLIDER, state.b2, state.b2Notes)}</tbody></table>
+
+      ${sec('B.3 — Ejector Mechanism')}
+      <table class="print-table">${tblHead('#','Item','Status','Notes')}<tbody>${buildToggleRows(B3_EJECTOR, state.b3, state.b3Notes)}</tbody></table>
+
+      ${sec('B.4 — Hydraulic System')}
+      <table class="print-table">${tblHead('#','Item','Status','Notes')}<tbody>${buildToggleRows(B4_HYDRAULIC, state.b4, state.b4Notes)}</tbody></table>
+
+      ${sec('B.5 — Cooling System')}
+      <table class="print-table">${tblHead('#','Item','Status','Notes')}<tbody>${buildToggleRows(B5_COOLING, state.b5, state.b5Notes)}</tbody></table>
+
+      ${sec('B.6 — Hot Runner System')}
+      <table class="print-table">${tblHead('#','Item','Status','Notes')}<tbody>${buildToggleRows(B6_HOTRUNNER, state.b6, state.b6Notes)}</tbody></table>
+
+      ${sec('B.7 — Unscrewing')}
+      <table class="print-table">${tblHead('#','Item','Status','Notes')}<tbody>${buildToggleRows(B7_UNSCREWING, state.b7, state.b7Notes)}</tbody></table>
+
+      ${sec('B.8 — Take-Out Robot')}
+      <table class="print-table">${tblHead('#','Item','Status','Notes')}<tbody>${buildToggleRows(B8_TAKEOUT, state.b8, state.b8Notes)}</tbody></table>
+
+      ${sec('B.9 — Balancing')}
+      <table class="print-table">${tblHead('#','Item','Status','Notes')}<tbody>${buildToggleRows(B9_BALANCING, state.b9, state.b9Notes)}</tbody></table>
+
+      ${sec('C — Demoulding')}
+      <table class="print-table">${tblHead('#','Item','Status','Notes')}<tbody>${buildToggleRowsNY(C_DEMOULDING, state.c, state.cNotes)}</tbody></table>
+
+      ${sec('D — Aesthetic Inspection')}
+      <table class="print-table">${tblHead('#','Item','Status','Notes')}<tbody>${buildToggleRows(D_AESTHETIC, state.d, state.dNotes)}</tbody></table>
+    </div>
+
+    <!-- CAVITY LAYOUT -->
+    <div class="print-section-wrap">
+      ${sec('Cavity Layout')}
+      <table class="print-table">${tblHead('Cavity','Status','Action','Result','Remark')}<tbody>
+        ${cavityRows}
+      </tbody></table>
+    </div>
+
+    <!-- CONCLUSION (F) -->
+    <div class="print-section-wrap">
+      ${sec('F — Conclusion & Recommendation')}
+      <table class="print-table">${tblHead('Kategori','Keterangan')}<tbody>
+        <tr><td class="pb-td-label">Produk</td><td>${document.getElementById('f_produk')?.value || '-'}</td></tr>
+        <tr><td class="pb-td-label">Mesin</td><td>${document.getElementById('f_mesin')?.value || '-'}</td></tr>
+        <tr><td class="pb-td-label">Mold</td><td>${document.getElementById('f_mold')?.value || '-'}</td></tr>
+        <tr><td class="pb-td-label">Peripheral</td><td>${document.getElementById('f_peripheral')?.value || '-'}</td></tr>
+      </tbody></table>
+    </div>
+
+    <!-- SIGNATURES -->
+    <div class="print-signatures">
+      <div class="print-sig-box"><div class="print-sig-role">Prepared</div><div class="print-sig-line"><div class="print-sig-name">${v('hi_prepared')}</div></div></div>
+      <div class="print-sig-box"><div class="print-sig-role">Reviewed</div><div class="print-sig-line"><div class="print-sig-name">${v('hi_reviewed')}</div></div></div>
+      <div class="print-sig-box"><div class="print-sig-role">Approved</div><div class="print-sig-line"><div class="print-sig-name">${v('hi_approved')}</div></div></div>
+    </div>
+  </div>`;
+
+  if (typeof html2pdf === 'undefined') { showToast('Library PDF belum siap.', 'error'); return; }
+  el.style.display = 'block';
+  html2pdf().set({
+    margin: [12, 10, 12, 10],
+    filename: `MTER_Report_${v('hi_moldCode')}_${v('hi_date')}.pdf`,
+    image: { type: 'jpeg', quality: .97 },
+    html2canvas: { scale: 2, useCORS: true, logging: false },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  }).from(el).save().then(() => { el.style.display = 'none'; showToast('PDF berhasil diunduh!', 'success'); });
 }
 
-// ================================================================
-// MODAL
-// ================================================================
-function closeModal(id) {
-  document.getElementById(id)?.classList.remove('open');
+// ----------------------------------------------------------------
+// SIDEBAR OPEN / CLOSE
+// ----------------------------------------------------------------
+function openSidebar() { document.getElementById('sidebar').classList.add('open'); document.getElementById('sidebarOverlay').classList.add('open'); document.getElementById('hamburger').classList.add('is-open'); document.body.style.overflow = 'hidden'; }
+function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebarOverlay').classList.remove('open'); document.getElementById('hamburger').classList.remove('is-open'); document.body.style.overflow = ''; }
+
+// ----------------------------------------------------------------
+// ANALYTICS DASHBOARD
+// ----------------------------------------------------------------
+let trendChartInstance = null;
+let judgmentChartInstance = null;
+
+function renderAnalyticsDashboard() {
+  if (typeof Chart === 'undefined') {
+    showToast('Library Chart.js belum siap.', 'error');
+    return;
+  }
+  
+  const saved = JSON.parse(localStorage.getItem('mter-reports') || '[]');
+  
+  // Update Machine Filter Dropdown
+  const machineSelect = document.getElementById('analyticsMachine');
+  const startDateInput = document.getElementById('analyticsStartDate');
+  const endDateInput = document.getElementById('analyticsEndDate');
+  if (machineSelect && machineSelect.options.length <= 1) {
+    const machines = [...new Set(saved.map(r => r.machine).filter(Boolean))];
+    machines.forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = m;
+      opt.textContent = m;
+      machineSelect.appendChild(opt);
+    });
+  }
+
+  const startDate = startDateInput ? startDateInput.value : '';
+  const endDate = endDateInput ? endDateInput.value : '';
+  const machine = machineSelect ? machineSelect.value : 'all';
+
+  let filtered = saved;
+  
+  // Filter By Machine
+  if (machine !== 'all') {
+    filtered = filtered.filter(r => r.machine === machine);
+  }
+  
+  // Filter By Date Range
+  if (startDate || endDate) {
+    filtered = filtered.filter(r => {
+      if (!r.date) return false;
+      const rDate = new Date(r.date);
+      // Remove time for accurate day comparison
+      rDate.setHours(0,0,0,0);
+      
+      let passStart = true;
+      let passEnd = true;
+      
+      if (startDate) {
+        const sDate = new Date(startDate);
+        sDate.setHours(0,0,0,0);
+        if (rDate < sDate) passStart = false;
+      }
+      if (endDate) {
+        const eDate = new Date(endDate);
+        eDate.setHours(0,0,0,0);
+        if (rDate > eDate) passEnd = false;
+      }
+      
+      return passStart && passEnd;
+    });
+  }
+
+  // Calculate KPIs
+  const totalTrial = filtered.length;
+  const approved = filtered.filter(r => r.judgment === 'APPROVED').length;
+  const conditional = filtered.filter(r => r.judgment === 'CONDITIONAL').length;
+  const rejected = filtered.filter(r => r.judgment === 'REJECTED').length;
+  
+  const approvedRate = totalTrial > 0 ? Math.round((approved / totalTrial) * 100) : 0;
+  
+  const kpiTotalEl = document.getElementById('kpiTotalTrial');
+  const kpiAppEl = document.getElementById('kpiApprovedRate');
+  const kpiDefEl = document.getElementById('kpiTotalDefect');
+  
+  if (kpiTotalEl) kpiTotalEl.textContent = totalTrial;
+  if (kpiAppEl) kpiAppEl.textContent = approvedRate + '%';
+  if (kpiDefEl) kpiDefEl.textContent = rejected;
+
+  // Chart 1: Judgment Pie
+  const ctxJudgment = document.getElementById('judgmentChart')?.getContext('2d');
+  if (ctxJudgment) {
+    if (judgmentChartInstance) judgmentChartInstance.destroy();
+    judgmentChartInstance = new Chart(ctxJudgment, {
+      type: 'doughnut',
+      data: {
+        labels: ['Approved', 'Conditional', 'Rejected'],
+        datasets: [{
+          data: [approved, conditional, rejected],
+          backgroundColor: ['#16a34a', '#eab308', '#dc2626'],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: { boxWidth: 12, boxHeight: 12, font: { size: 11 }, padding: 10 }
+          }
+        }
+      }
+    });
+  }
+
+  // Chart 2: Trend Trend Reject (Dummy Grouping By Date)
+  const ctxTrend = document.getElementById('trendChart')?.getContext('2d');
+  if (ctxTrend) {
+    if (trendChartInstance) trendChartInstance.destroy();
+    
+    // Group by Date for simple trend
+    const trendMap = {};
+    filtered.forEach(r => {
+      const d = new Date(r.date).toISOString().split('T')[0];
+      if (!trendMap[d]) trendMap[d] = { total: 0, ng: 0 };
+      trendMap[d].total++;
+      if (r.judgment === 'REJECTED') trendMap[d].ng++;
+    });
+    
+    const labels = Object.keys(trendMap).sort();
+    const dataTotal = labels.map(l => trendMap[l].total);
+    const dataNG = labels.map(l => trendMap[l].ng);
+
+    trendChartInstance = new Chart(ctxTrend, {
+      type: 'bar',
+      data: {
+        labels: labels.length > 0 ? labels : ['-'],
+        datasets: [
+          {
+            label: 'Total Trial',
+            data: dataTotal.length > 0 ? dataTotal : [0],
+            backgroundColor: '#3b82f6',
+            borderRadius: 4
+          },
+          {
+            label: 'NG / Rejected',
+            data: dataNG.length > 0 ? dataNG : [0],
+            backgroundColor: '#dc2626',
+            borderRadius: 4
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: { beginAtZero: true, ticks: { stepSize: 1 } }
+        },
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: { boxWidth: 12, boxHeight: 12, font: { size: 11 }, padding: 10 }
+          }
+        }
+      }
+    });
+  }
 }
 
-// ================================================================
+// ----------------------------------------------------------------
 // INIT
-// ================================================================
+// ----------------------------------------------------------------
 function init() {
-  // Set today's date
   const today = new Date().toISOString().split('T')[0];
-  const dateEl = document.getElementById('trialDate');
+  const dateEl = document.getElementById('hi_date');
   if (dateEl) dateEl.value = today;
 
-  // Build sidebar (default: parambank mode)
-  buildSidebar();
+  buildToggleItems('b1_openingItems', B1_OPENING, 'b1', 'b1Notes');
+  buildToggleItems('b2_sliderItems', B2_SLIDER, 'b2', 'b2Notes');
+  buildToggleItems('b3_ejectorItems', B3_EJECTOR, 'b3', 'b3Notes');
+  buildToggleItems('b4_hydraulicItems', B4_HYDRAULIC, 'b4', 'b4Notes');
+  buildB5CoolingItems(); // B.5 uses special builder for Nipples Size
+  buildToggleItems('b6_hotrunnerItems', B6_HOTRUNNER, 'b6', 'b6Notes');
+  buildToggleItems('b7_unscrewingItems', B7_UNSCREWING, 'b7', 'b7Notes');
+  buildToggleItems('b8_takeoutItems', B8_TAKEOUT, 'b8', 'b8Notes');
+  buildToggleItems('b9_balancingItems', B9_BALANCING, 'b9', 'b9Notes');
+  buildToggleItemsNoYes('c_demouldingItems', C_DEMOULDING, 'c', 'cNotes'); // C: NO/YES
+  buildToggleItems('d_aestheticItems', D_AESTHETIC, 'd', 'dNotes');        // D: OK/NG
 
-  // Apply default mode UI
-  switchMode('parambank');
-
-  // Build MTER toggle items (still build them even in parambank mode)
-  buildToggleItems('moldMechItems',   MOLD_MECH_ITEMS,   'okng',  'moldMech',  'moldMechNotes');
-  buildToggleItems('demouldingItems', DEMOULDING_ITEMS,  'noyes', 'demoulding','demouldingNotes');
-  buildToggleItems('aestheticItems',  AESTHETIC_ITEMS,   'okng',  'aesthetic', 'aestheticNotes');
-
-  // Build cooling inputs
-  buildCoolingInputs();
-
-  // Wire hamburger
-  document.getElementById('hamburger')?.addEventListener('click', () => {
-    const isOpen = document.getElementById('sidebar').classList.contains('open');
-    isOpen ? closeSidebar() : openSidebar();
+  // F. Conclusion textareas
+  ['f_produk', 'f_mesin', 'f_mold', 'f_peripheral'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.value = state[id] || '';
+      el.addEventListener('input', e => { state[id] = e.target.value; });
+    }
   });
 
-  // Wire sidebar overlay
+  renderCavityList();
+  renderB5Zones();
+  document.getElementById('cavAddBtn')?.addEventListener('click', () => {
+    state.cavities.push({ status: '', action: '', result: '', remark: '' });
+    state.cavityCount = state.cavities.length;
+    renderCavityList();
+  });
+  document.getElementById('cavRemoveBtn')?.addEventListener('click', () => {
+    if (state.cavities.length > 1) { state.cavities.pop(); state.cavityCount = state.cavities.length; renderCavityList(); }
+    else showToast('Minimal 1 cavity harus ada.', 'info');
+  });
+
+  initRadioGroup('hi_moldStatusGroup', 'moldStatus');
+
+  ['pb_machine', 'pb_material'].forEach(selId => {
+    const sel = document.getElementById(selId);
+    const inp = document.getElementById(selId + '_custom');
+    if (!sel || !inp) return;
+    sel.addEventListener('change', () => { inp.style.display = sel.value === 'Lainnya' ? '' : 'none'; });
+  });
+
+  document.getElementById('hamburger')?.addEventListener('click', () => {
+    document.getElementById('sidebar').classList.contains('open') ? closeSidebar() : openSidebar();
+  });
   document.getElementById('sidebarOverlay')?.addEventListener('click', closeSidebar);
 
-  // Wire MTER save buttons
   document.querySelectorAll('[data-save-section]').forEach(btn => {
     btn.addEventListener('click', () => saveSection(btn.dataset.saveSection));
   });
 
-  // Wire cavity controls
-  document.getElementById('cavAllOk')?.addEventListener('click', () => setCavAll('ok'));
-  document.getElementById('cavAllNg')?.addEventListener('click', () => setCavAll('ng'));
-  document.getElementById('cavReset')?.addEventListener('click', () => setCavAll(''));
-
-  // Wire modal closes
-  document.querySelectorAll('.modal-overlay').forEach(m => {
-    m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
-  });
-
-  // Wire Parameter Bank buttons
+  initMouldDropdown();
   document.getElementById('pb_saveBtn')?.addEventListener('click', saveParamBank);
   document.getElementById('pb_loadBtn')?.addEventListener('click', loadParamBank);
+  renderMouldRows('close');
+  renderMouldRows('open');
+  initCoolingCanvas();
 
-  // Keyboard shortcuts
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') closeSidebar();
+  document.getElementById('rh_filterBtn')?.addEventListener('click', () => showToast('Filter laporan memerlukan koneksi backend.', 'info'));
+  document.getElementById('rh_clearBtn')?.addEventListener('click', () => {
+    const dp = document.getElementById('rh_datePicker');
+    if (dp) dp.value = '';
+    showToast('Filter direset.', 'info');
+  });
+  
+  document.getElementById('analyticsFilterBtn')?.addEventListener('click', () => {
+    renderAnalyticsDashboard();
+    showToast('Filter diterapkan.', 'success');
   });
 
-  // Window resize — update chart
-  window.addEventListener('resize', () => {
-    if (currentStep === 7 && coolingChart) coolingChart.resize();
-  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSidebar(); });
+
+  // Restore state from sessionStorage
+  const savedMode = sessionStorage.getItem('currentMode');
+  const savedPanel = sessionStorage.getItem('activePanelId');
+  if (savedPanel) activePanelId = savedPanel;
+  switchMode(savedMode || 'parambank');
 }
 
 document.addEventListener('DOMContentLoaded', init);

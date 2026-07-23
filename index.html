@@ -1,713 +1,1262 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="description" content="MTER Smart Checksheet — Aplikasi inspeksi mold & injection machine digital. Mold Trial Evaluation Report + Parameter Bank Mitsubishi MEt II." />
+  <meta name="description" content="MTER Smart Checksheet - Aplikasi inspeksi mold dan injection machine digital." />
   <title>MTER Smart Checksheet</title>
 
-  <!-- Fonts: Inter (Shadcn style) -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 
-  <!-- Chart.js CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-
-  <!-- html2pdf CDN -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <!-- App Styles -->
   <link rel="stylesheet" href="style.css" />
 </head>
+
 <body>
 
-<!-- SIDEBAR OVERLAY -->
-<div class="sidebar-overlay" id="sidebarOverlay"></div>
-
-<!-- SIDEBAR -->
-<nav class="sidebar" id="sidebar">
-  <div class="sidebar-brand">
-    <img src="Logo.png" alt="ALBEA" onerror="this.style.display='none'" />
-    <div class="sidebar-brand-text">
-      <strong>MTER Checksheet</strong>
-      <span>Mold Trial Evaluation Report</span>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <img src="Logo.png" alt="ALBEA" onerror="this.style.display='none'" />
+      <div class="sidebar-brand-text">
+        <strong>MTER Checksheet</strong>
+        <span>Mold Trial Evaluation Report</span>
+      </div>
     </div>
-  </div>
-  <div class="sidebar-nav" id="sidebarNav"><!-- Built by JS --></div>
-  <div class="sidebar-footer">
-    <p>v4.0 &bull; ALBEA Industrial Tools &bull; 2026</p>
-  </div>
-</nav>
-
-<!-- HEADER -->
-<header class="app-header" id="appHeader">
-  <button class="hamburger" id="hamburger" aria-label="Toggle menu">
-    <span></span><span></span><span></span>
-  </button>
-  <div class="header-brand">
-    <img src="Logo.png" alt="ALBEA" onerror="this.style.display='none'" />
-    <div class="header-brand-text">
-      <span class="ht-title" id="headerTitle">MTER Smart Checksheet</span>
-      <span class="ht-sub" id="headerSub">Mold Trial &amp; Evaluation Report</span>
+    <div class="sidebar-nav" id="sidebarNav"></div>
+    <div class="sidebar-footer">
+      <p>v5.0 &bull; ALBEA Industrial Tools &bull; 2026</p>
     </div>
-  </div>
-  <div class="header-right">
-    <div class="progress-pill" id="progressPill">
-      <span class="pp-dot"></span>
-      <span id="progressLabel">1/7</span>
+  </nav>
+
+  <header class="app-header" id="appHeader">
+    <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="header-brand">
+      <img src="Logo.png" alt="ALBEA" onerror="this.style.display='none'" />
+      <div class="header-brand-text">
+        <span class="ht-title" id="headerTitle">MTER Smart Checksheet</span>
+        <span class="ht-sub" id="headerSub">Mold Trial &amp; Evaluation Report</span>
+      </div>
     </div>
+    <div class="header-right">
+      <div class="progress-pill" id="progressPill" style="display:none;">
+        <span class="pp-dot"></span>
+        <span id="progressLabel">-</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="top-progress" id="topProgress" style="display:none;">
+    <div class="top-progress-fill" id="progressFill" style="width:0%"></div>
   </div>
-</header>
 
-<!-- TOP PROGRESS BAR -->
-<div class="top-progress" id="topProgress">
-  <div class="top-progress-fill" id="progressFill" style="width:14.28%"></div>
-</div>
+  <main class="main-content" id="mainContent">
 
-<!-- MAIN CONTENT -->
-<main class="main-content" id="mainContent">
+    <!-- ==========================================
+     MTER MODE 
+=========================================== -->
+    <div id="mterMode" style="display:none;">
 
-  <!-- ==================== MTER CHECKSHEET MODE ==================== -->
-  <div id="mterMode">
+      <!-- PANEL: Header Informasi -->
+      <div class="step-panel" id="panel-header-info">
+        <div class="section-card">
+          <div class="card-header">
+            <div class="card-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="8" height="4" x="8" y="2" rx="1" />
+                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+                <path d="M12 11h4" />
+                <path d="M12 16h4" />
+                <path d="M8 11h.01" />
+                <path d="M8 16h.01" />
+              </svg>
+            </div>
+            <div class="card-header-text">
+              <span class="card-badge">Header Informasi</span>
+              <h1 class="card-title">Identitas &amp; Header Trial</h1>
+              <p class="card-desc">Isi data identifikasi laporan dan informasi trial ini.</p>
+            </div>
+          </div>
 
-    <!-- PANEL 1: Section A - Info Umum -->
-    <div class="step-panel active" id="panel1">
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Trial Number <span class="req">*</span></label><input
+                type="number" class="form-input" id="hi_trialNumber" placeholder="1" min="1" /></div>
+            <div class="form-group"><label class="form-label">Date <span class="req">*</span></label><input type="date"
+                class="form-input" id="hi_date" /></div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Prepared</label><input type="text" class="form-input"
+                id="hi_prepared" placeholder="Nama PIC" /></div>
+            <div class="form-group"><label class="form-label">Reviewed</label><input type="text" class="form-input"
+                id="hi_reviewed" placeholder="Nama Reviewer" /></div>
+          </div>
+          <div class="form-group"><label class="form-label">Approved</label><input type="text" class="form-input"
+              id="hi_approved" placeholder="Nama Approver" /></div>
+
+          <div class="divider"></div>
+
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Product Code</label><input type="text" class="form-input"
+                id="hi_productCode" placeholder="PC-XXXX" /></div>
+            <div class="form-group"><label class="form-label">Mold Code</label><input type="text" class="form-input"
+                id="hi_moldCode" placeholder="MD-XXXX" /></div>
+          </div>
+
+          <div class="form-group"><label class="form-label">Product Name</label><input type="text" class="form-input"
+              id="hi_productName" placeholder="Nama produk" /></div>
+
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Mold Maker</label><input type="text" class="form-input"
+                id="hi_moldMaker" placeholder="Nama mold maker" /></div>
+            <div class="form-group"><label class="form-label">Part Name</label><input type="text" class="form-input"
+                id="hi_partName" placeholder="Nama part" /></div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Mold Status <span class="req">*</span></label>
+            <div class="radio-group" id="hi_moldStatusGroup">
+              <button class="radio-btn" data-val="Transfer">Transfer</button>
+              <button class="radio-btn" data-val="New">New</button>
+              <button class="radio-btn" data-val="Duplicate">Duplicate</button>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Resin</label><input type="text" class="form-input"
+                id="hi_resin" placeholder="PP, ABS, PC..." /></div>
+            <div class="form-group"><label class="form-label">Brand / Grade</label><input type="text" class="form-input"
+                id="hi_brandGrade" placeholder="Brand / Grade" /></div>
+          </div>
+
+          <button class="save-btn" data-save-section="HeaderInfo">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+              <polyline points="17 21 17 13 7 13 7 21" />
+              <polyline points="7 3 7 8 15 8" />
+            </svg>
+            Simpan Header Informasi
+          </button>
+          <div class="panel-nav-actions">
+            <button class="nav-btn-next" onclick="showPanel('panel-inj-machine')">Next &#8594;</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- PANEL: A. Injection Machine Data -->
+      <div class="step-panel" id="panel-inj-machine">
+        <div class="section-card">
+          <div class="card-header">
+            <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="7" width="20" height="14" rx="2" />
+                <path d="M16 3v4M8 3v4" />
+              </svg></div>
+            <div class="card-header-text"><span class="card-badge">A</span>
+              <h2 class="card-title">Injection Machine Data</h2>
+              <p class="card-desc">Data mesin injeksi yang digunakan pada trial ini.</p>
+            </div>
+          </div>
+
+          <p class="subsection-label">1. Tonnage</p>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Minimum (Ton)</label><input type="number"
+                class="form-input" id="a_tonnageMin" placeholder="0" /></div>
+            <div class="form-group"><label class="form-label">Actual (Ton)</label><input type="number"
+                class="form-input" id="a_tonnageActual" placeholder="0" /></div>
+          </div>
+
+          <p class="subsection-label">2. Nozzle</p>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Long</label><input type="text" class="form-input"
+                id="a_nozzleLong" placeholder="Panjang nozzle" /></div>
+            <div class="form-group"><label class="form-label">Short</label><input type="text" class="form-input"
+                id="a_nozzleShort" placeholder="Pendek nozzle" /></div>
+          </div>
+
+          <p class="subsection-label">3. MTC / Chiller</p>
+          <div class="form-group"><label class="form-label">Cavity Temperature</label><input type="number"
+              class="form-input" id="a_tempCavity" placeholder="0" /></div>
+          <div class="form-group"><label class="form-label">Core Temperature</label><input type="number"
+              class="form-input" id="a_tempCore" placeholder="0" /></div>
+          <div class="form-group"><label class="form-label">Stripper Plate Temperature</label><input type="number"
+              class="form-input" id="a_tempStripper" placeholder="0" /></div>
+          <div class="form-group"><label class="form-label">Other Temperature (opsional)</label><input type="text"
+              class="form-input" id="a_tempOther" placeholder="Nama zona dan nilai suhu" /></div>
+
+          <p class="subsection-label">4. Process Data</p>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Cycle Time (s)</label><input type="number"
+                class="form-input" id="a_cycleTime" placeholder="0" step="0.1" /></div>
+            <div class="form-group"><label class="form-label">Shot Weight (g)</label><input type="number"
+                class="form-input" id="a_shotWeight" placeholder="0" step="0.1" /></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Runner Weight (g)</label><input type="number"
+                class="form-input" id="a_runnerWeight" placeholder="0" step="0.1" /></div>
+            <div class="form-group"><label class="form-label">Product Weight (g)</label><input type="number"
+                class="form-input" id="a_productWeight" placeholder="0" step="0.1" /></div>
+          </div>
+
+          <button class="save-btn" data-save-section="InjMachine">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+              <polyline points="17 21 17 13 7 13 7 21" />
+              <polyline points="7 3 7 8 15 8" />
+            </svg>
+            Simpan Section A
+          </button>
+          <div class="panel-nav-actions">
+            <button class="nav-btn-prev" onclick="showPanel('panel-header-info')">&#8592; Prev</button>
+            <button class="nav-btn-next" onclick="showPanel('panel-b1-opening')">Next &#8594;</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- B.1 Opening Mechanism -->
+      <div class="step-panel" id="panel-b1-opening">
+        <div class="section-card">
+          <div class="card-header">
+            <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3" />
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14" />
+              </svg></div>
+            <div class="card-header-text"><span class="card-badge">B.1</span>
+              <h2 class="card-title">Opening Mechanism</h2>
+              <p class="card-desc">Pilih OK / NG untuk setiap item. Jika NG, isi kolom Action, Result, Remark.</p>
+            </div>
+          </div>
+          <div class="toggle-group" id="b1_openingItems"></div>
+          <button class="save-btn" data-save-section="B1Opening"><svg xmlns="http://www.w3.org/2000/svg" width="14"
+              height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+              <polyline points="17 21 17 13 7 13 7 21" />
+              <polyline points="7 3 7 8 15 8" />
+            </svg> Simpan B.1 Opening Mechanism</button>
+          <div class="panel-nav-actions">
+            <button class="nav-btn-prev" onclick="showPanel('panel-inj-machine')">&#8592; Prev</button>
+            <button class="nav-btn-next" onclick="showPanel('panel-b2-slider')">Next &#8594;</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- B.2 Slider Mechanism -->
+      <div class="step-panel" id="panel-b2-slider">
+        <div class="section-card">
+          <div class="card-header">
+            <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                <path
+                  d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+              </svg></div>
+            <div class="card-header-text"><span class="card-badge">B.2</span>
+              <h2 class="card-title">Slider Mechanism</h2>
+              <p class="card-desc">Pilih OK / NG untuk setiap item mekanisme slider.</p>
+            </div>
+          </div>
+          <div class="toggle-group" id="b2_sliderItems"></div>
+          <button class="save-btn" data-save-section="B2Slider"><svg xmlns="http://www.w3.org/2000/svg" width="14"
+              height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+              <polyline points="17 21 17 13 7 13 7 21" />
+              <polyline points="7 3 7 8 15 8" />
+            </svg> Simpan B.2 Slider Mechanism</button>
+          <div class="panel-nav-actions">
+            <button class="nav-btn-prev" onclick="showPanel('panel-b1-opening')">&#8592; Prev</button>
+            <button class="nav-btn-next" onclick="showPanel('panel-b3-ejector')">Next &#8594;</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- B.3 Ejector Mechanism -->
+      <div class="step-panel" id="panel-b3-ejector">
+        <div class="section-card">
+          <div class="card-header">
+            <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="17 11 21 7 17 3" />
+                <line x1="21" y1="7" x2="9" y2="7" />
+                <polyline points="7 21 3 17 7 13" />
+                <line x1="15" y1="17" x2="3" y2="17" />
+              </svg></div>
+            <div class="card-header-text"><span class="card-badge">B.3</span>
+              <h2 class="card-title">Ejector Mechanism</h2>
+              <p class="card-desc">Pilih OK / NG untuk setiap item mekanisme ejector.</p>
+            </div>
+          </div>
+          <div class="toggle-group" id="b3_ejectorItems"></div>
+          <button class="save-btn" data-save-section="B3Ejector"><svg xmlns="http://www.w3.org/2000/svg" width="14"
+              height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+              <polyline points="17 21 17 13 7 13 7 21" />
+              <polyline points="7 3 7 8 15 8" />
+            </svg> Simpan B.3 Ejector Mechanism</button>
+          <div class="panel-nav-actions">
+            <button class="nav-btn-prev" onclick="showPanel('panel-b2-slider')">&#8592; Prev</button>
+            <button class="nav-btn-next" onclick="showPanel('panel-b4-hydraulic')">Next &#8594;</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- B.4 Hydraulic System -->
+      <div class="step-panel" id="panel-b4-hydraulic">
+        <div class="section-card">
+          <div class="card-header">
+            <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg></div>
+            <div class="card-header-text"><span class="card-badge">B.4</span>
+              <h2 class="card-title">Hydraulic System</h2>
+              <p class="card-desc">Pilih OK / NG untuk setiap item sistem hydraulic.</p>
+            </div>
+          </div>
+          <div class="toggle-group" id="b4_hydraulicItems"></div>
+          <button class="save-btn" data-save-section="B4Hydraulic"><svg xmlns="http://www.w3.org/2000/svg" width="14"
+              height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+              <polyline points="17 21 17 13 7 13 7 21" />
+              <polyline points="7 3 7 8 15 8" />
+            </svg> Simpan B.4 Hydraulic System</button>
+          <div class="panel-nav-actions">
+            <button class="nav-btn-prev" onclick="showPanel('panel-b3-ejector')">&#8592; Prev</button>
+            <button class="nav-btn-next" onclick="showPanel('panel-b5-cooling')">Next &#8594;</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- B.5 Cooling System -->
+      <div class="step-panel" id="panel-b5-cooling">
+        <div class="section-card">
+          <div class="card-header">
+            <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg></div>
+            <div class="card-header-text"><span class="card-badge">B.5</span>
+              <h2 class="card-title">Cooling System</h2>
+              <p class="card-desc">Pilih OK / NG untuk setiap item sistem pendingin.</p>
+            </div>
+          </div>
+          <div class="toggle-group" id="b5_coolingItems"></div>
+          
+          <div style="margin: 20px 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+              <h4 style="margin: 0; font-size: 0.95rem; color: var(--text-dark);">Cooling Channel Zones</h4>
+              <div style="display: flex; gap: 8px;">
+                <button type="button" class="pb-btn-add-outline" onclick="addB5Zone()">+ Tambah Zona</button>
+                <button type="button" class="pb-btn-remove-outline" onclick="removeB5Zone()">- Kurangi Zona</button>
+              </div>
+            </div>
+            <div id="b5_dynamicZones" style="display: grid; gap: 12px;"></div>
+          </div>
+          <button class="save-btn" data-save-section="B5Cooling"><svg xmlns="http://www.w3.org/2000/svg" width="14"
+              height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+              <polyline points="17 21 17 13 7 13 7 21" />
+              <polyline points="7 3 7 8 15 8" />
+            </svg> Simpan B.5 Cooling System</button>
+          <div class="panel-nav-actions">
+            <button class="nav-btn-prev" onclick="showPanel('panel-b4-hydraulic')">&#8592; Prev</button>
+            <button class="nav-btn-next" onclick="showPanel('panel-b6-hotrunner')">Next &#8594;</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- B.6 Hot Runner System -->
+      <div class="step-panel" id="panel-b6-hotrunner">
+        <div class="section-card">
+          <div class="card-header">
+            <div class="card-icon amber"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"
+                stroke-linejoin="round">
+                <path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z" />
+              </svg></div>
+            <div class="card-header-text"><span class="card-badge amber">B.6</span>
+              <h2 class="card-title">Hot Runner System</h2>
+              <p class="card-desc">Pilih OK / NG untuk setiap item hot runner system.</p>
+            </div>
+          </div>
+          <div class="toggle-group" id="b6_hotrunnerItems"></div>
+          <button class="save-btn" data-save-section="B6HotRunner"><svg xmlns="http://www.w3.org/2000/svg" width="14"
+              height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+              <polyline points="17 21 17 13 7 13 7 21" />
+              <polyline points="7 3 7 8 15 8" />
+            </svg> Simpan B.6 Hot Runner System</button>
+          <div class="panel-nav-actions">
+            <button class="nav-btn-prev" onclick="showPanel('panel-b5-cooling')">&#8592; Prev</button>
+            <button class="nav-btn-next" onclick="showPanel('panel-b7-unscrewing')">Next &#8594;</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- B.7 Unscrewing -->
+      <div class="step-panel" id="panel-b7-unscrewing">
+        <div class="section-card">
+          <div class="card-header">
+            <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                <path d="M3 3v5h5" />
+              </svg></div>
+            <div class="card-header-text"><span class="card-badge">B.7</span>
+              <h2 class="card-title">Unscrewing</h2>
+              <p class="card-desc">Pilih OK / NG untuk setiap item unscrewing.</p>
+            </div>
+          </div>
+          <div class="toggle-group" id="b7_unscrewingItems"></div>
+          <button class="save-btn" data-save-section="B7Unscrewing"><svg xmlns="http://www.w3.org/2000/svg" width="14"
+              height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+              <polyline points="17 21 17 13 7 13 7 21" />
+              <polyline points="7 3 7 8 15 8" />
+            </svg> Simpan B.7 Unscrewing</button>
+          <div class="panel-nav-actions">
+            <button class="nav-btn-prev" onclick="showPanel('panel-b6-hotrunner')">&#8592; Prev</button>
+            <button class="nav-btn-next" onclick="showPanel('panel-b8-takeout')">Next &#8594;</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- B.8 Product Take Out -->
+      <div class="step-panel" id="panel-b8-takeout">
+        <div class="section-card">
+          <div class="card-header">
+            <div class="card-icon green"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"
+                stroke-linejoin="round">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                <circle cx="12" cy="10" r="3" />
+              </svg></div>
+            <div class="card-header-text"><span class="card-badge green">B.8</span>
+              <h2 class="card-title">Product Take Out</h2>
+              <p class="card-desc">Pilih OK / NG untuk setiap item pengambilan produk.</p>
+            </div>
+          </div>
+          <div class="toggle-group" id="b8_takeoutItems"></div>
+          <button class="save-btn" data-save-section="B8TakeOut"><svg xmlns="http://www.w3.org/2000/svg" width="14"
+              height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+              <polyline points="17 21 17 13 7 13 7 21" />
+              <polyline points="7 3 7 8 15 8" />
+            </svg> Simpan B.8 Product Take Out</button>
+          <div class="panel-nav-actions">
+            <button class="nav-btn-prev" onclick="showPanel('panel-b7-unscrewing')">&#8592; Prev</button>
+            <button class="nav-btn-next" onclick="showPanel('panel-b9-balancing')">Next &#8594;</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- B.9 Balancing -->
+      <div class="step-panel" id="panel-b9-balancing">
+        <div class="section-card">
+          <div class="card-header">
+            <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="20" x2="18" y2="10" />
+                <line x1="12" y1="20" x2="12" y2="4" />
+                <line x1="6" y1="20" x2="6" y2="14" />
+              </svg></div>
+            <div class="card-header-text"><span class="card-badge">B.9</span>
+              <h2 class="card-title">Balancing</h2>
+              <p class="card-desc">Pilih OK / NG untuk setiap item balancing.</p>
+            </div>
+          </div>
+          <div class="toggle-group" id="b9_balancingItems"></div>
+          <button class="save-btn" data-save-section="B9Balancing"><svg xmlns="http://www.w3.org/2000/svg" width="14"
+              height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+              <polyline points="17 21 17 13 7 13 7 21" />
+              <polyline points="7 3 7 8 15 8" />
+            </svg> Simpan B.9 Balancing</button>
+          <div class="panel-nav-actions">
+            <button class="nav-btn-prev" onclick="showPanel('panel-b8-takeout')">&#8592; Prev</button>
+            <button class="nav-btn-next" onclick="showPanel('panel-c-demoulding')">Next &#8594;</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- C. Demoulding Condition -->
+      <div class="step-panel" id="panel-c-demoulding">
+        <div class="section-card">
+          <div class="card-header">
+            <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                <path
+                  d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z" />
+              </svg></div>
+            <div class="card-header-text"><span class="card-badge">C</span>
+              <h2 class="card-title">Demoulding Condition</h2>
+              <p class="card-desc">Pilih NO / YES untuk setiap kondisi. Jika YES, isi kolom Action, Result, Remark.</p>
+            </div>
+          </div>
+          <div class="toggle-group" id="c_demouldingItems"></div>
+          <button class="save-btn" data-save-section="CDemoulding"><svg xmlns="http://www.w3.org/2000/svg" width="14"
+              height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+              <polyline points="17 21 17 13 7 13 7 21" />
+              <polyline points="7 3 7 8 15 8" />
+            </svg> Simpan C. Demoulding Condition</button>
+          <div class="panel-nav-actions">
+            <button class="nav-btn-prev" onclick="showPanel('panel-b9-balancing')">&#8592; Prev</button>
+            <button class="nav-btn-next" onclick="showPanel('panel-d-aesthetic')">Next &#8594;</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- D. Product Aesthetic Evaluation -->
+      <div class="step-panel" id="panel-d-aesthetic">
+        <div class="section-card">
+          <div class="card-header">
+            <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="12 2 15 8 22 9 17 14 18 21 12 17 6 21 7 14 2 9 9 8 12 2" />
+              </svg></div>
+            <div class="card-header-text"><span class="card-badge">D</span>
+              <h2 class="card-title">Product Aesthetic Evaluation</h2>
+              <p class="card-desc">Pilih OK / NG untuk setiap item. Jika NG, isi kolom Action, Result, Remark.</p>
+            </div>
+          </div>
+          <div class="toggle-group" id="d_aestheticItems"></div>
+          <button class="save-btn" data-save-section="DAesthetic"><svg xmlns="http://www.w3.org/2000/svg" width="14"
+              height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+              <polyline points="17 21 17 13 7 13 7 21" />
+              <polyline points="7 3 7 8 15 8" />
+            </svg> Simpan D. Product Aesthetic</button>
+          <div class="panel-nav-actions">
+            <button class="nav-btn-prev" onclick="showPanel('panel-c-demoulding')">&#8592; Prev</button>
+            <button class="nav-btn-next" onclick="showPanel('panel-e-cavity')">Next &#8594;</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- E. Cavity Number Layout -->
+      <div class="step-panel" id="panel-e-cavity">
+        <div class="section-card">
+          <div class="card-header">
+            <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7" />
+                <rect x="14" y="3" width="7" height="7" />
+                <rect x="14" y="14" width="7" height="7" />
+                <rect x="3" y="14" width="7" height="7" />
+              </svg></div>
+            <div class="card-header-text"><span class="card-badge">E</span>
+              <h2 class="card-title">Cavity Number Layout</h2>
+              <p class="card-desc">Tambah atau kurangi cavity, toggle OK/NG dan beri catatan.</p>
+            </div>
+          </div>
+          <div class="cavity-list-controls">
+            <button class="cav-add-btn" id="cavAddBtn"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13"
+                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg> Tambah Cavity</button>
+            <button class="cav-remove-btn" id="cavRemoveBtn"><svg xmlns="http://www.w3.org/2000/svg" width="13"
+                height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                stroke-linecap="round" stroke-linejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg> Kurangi Cavity</button>
+          </div>
+          <div class="cavity-list" id="cavityList"></div>
+          <button class="save-btn" data-save-section="ECavity"><svg xmlns="http://www.w3.org/2000/svg" width="14"
+              height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+              <polyline points="17 21 17 13 7 13 7 21" />
+              <polyline points="7 3 7 8 15 8" />
+            </svg> Simpan E. Cavity Layout</button>
+          <div class="panel-nav-actions">
+            <button class="nav-btn-prev" onclick="showPanel('panel-d-aesthetic')">&#8592; Prev</button>
+            <button class="nav-btn-next" onclick="showPanel('panel-f-conclusion')">Next &#8594;</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- F. Conclusion (Kesimpulan) -->
+      <div class="step-panel" id="panel-f-conclusion">
+        <div class="section-card">
+          <div class="card-header">
+            <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="16" y1="13" x2="8" y2="13" />
+                <line x1="16" y1="17" x2="8" y2="17" />
+              </svg></div>
+            <div class="card-header-text"><span class="card-badge">F</span>
+              <h2 class="card-title">Conclusion (Kesimpulan)</h2>
+              <p class="card-desc">Isi kesimpulan kondisi PRODUK, MESIN, MOLD, dan PERIPHERAL setelah trial.</p>
+            </div>
+          </div>
+          <div class="form-group"><label class="form-label">PRODUK</label><textarea class="form-textarea cm-textarea"
+              id="f_produk" placeholder="Kesimpulan kondisi produk setelah trial..."></textarea></div>
+          <div class="form-group"><label class="form-label">MESIN</label><textarea class="form-textarea cm-textarea"
+              id="f_mesin" placeholder="Kesimpulan kondisi mesin setelah trial..."></textarea></div>
+          <div class="form-group"><label class="form-label">MOLD</label><textarea class="form-textarea cm-textarea"
+              id="f_mold" placeholder="Kesimpulan kondisi mold setelah trial..."></textarea></div>
+          <div class="form-group"><label class="form-label">PERIPHERAL (MTC, Chiller, AC, Dehumidifier,
+              dll)</label><textarea class="form-textarea cm-textarea" id="f_peripheral"
+              placeholder="Kesimpulan kondisi peripheral setelah trial..."></textarea></div>
+          <button class="save-btn" data-save-section="FConclusion"><svg xmlns="http://www.w3.org/2000/svg" width="14"
+              height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+              <polyline points="17 21 17 13 7 13 7 21" />
+              <polyline points="7 3 7 8 15 8" />
+            </svg> Simpan F. Conclusion</button>
+          <div class="panel-nav-actions">
+            <button class="nav-btn-prev" onclick="showPanel('panel-e-cavity')">&#8592; Prev</button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /mterMode -->
+
+
+
+    <!-- ==========================================
+     PARAMETER BANK MODE 
+=========================================== -->
+    <div id="paramBankMode" style="display:none;">
+      <div class="pb-grid">
+        
+        <!-- 1. General Information & Temperature -->
+        <div class="pb-card pb-card-wide">
+          <div class="pb-card-header">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+            <h3 class="pb-card-title">General Information &amp; Temperature</h3>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 20px;">
+            <!-- Kolom 1 -->
+            <div class="pb-inner-box">
+              <p class="subsection-label" style="margin-top:0;">Informasi Umum</p>
+              <div class="form-group"><label class="form-label">Tanggal</label><input type="date" class="form-input" id="pb_tanggal" /></div>
+              <div class="form-group"><label class="form-label">Mesin</label>
+                <select class="form-select" id="pb_machine" style="margin-bottom: 6px;">
+                  <option value="">-- Pilih Mesin --</option>
+                  <option>Mistsubishi 130 MEt 2</option>
+                  <option>FN2000</option>
+                  <option>JSW 140 AD</option>
+                  <option>Borche</option>
+                  <option>Haitian</option>
+                  <option value="Lainnya">Lainnya</option>
+                </select>
+                <input type="text" class="form-input" id="pb_machine_custom" placeholder="Ketik nama mesin..." style="display:none;" />
+              </div>
+              <div class="form-group"><label class="form-label">Nama Mould</label>
+                <div class="pb-mould-wrap" style="margin-bottom: 6px;">
+                  <select class="form-select" id="pb_mould">
+                    <!-- Populated dynamically by JS from localStorage -->
+                  </select>
+                  <button class="pb-mould-del" id="pb_mould_del" title="Hapus Mould yang dipilih">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="3 6 5 6 21 6" />
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <div class="form-group"><label class="form-label">Cavity</label><input type="text" class="form-input" id="pb_cavity" placeholder="0" /></div>
+              <div class="form-group"><label class="form-label">Produksi (Semi-auto/Man)</label><input type="text" class="form-input" id="pb_produksi" placeholder="Semi-auto" /></div>
+              <div class="form-group"><label class="form-label">Ket</label><input type="text" class="form-input" id="pb_ket" placeholder="Keterangan..." /></div>
+            </div>
+            
+            <!-- Kolom 2 -->
+            <div class="pb-inner-box">
+              <p class="subsection-label" style="margin-top:0;">Material &amp; Berat</p>
+              <div class="form-group"><label class="form-label">Bahan</label>
+                <select class="form-select" id="pb_material" style="margin-bottom: 6px;">
+                  <option value="">-- Pilih Material --</option>
+                  <option value="PCR">PCR (150&deg;&ndash;160&deg;C)</option>
+                  <option value="AS/SAN">AS/SAN (75&deg;&ndash;85&deg;C)</option>
+                  <option value="ABS">ABS (80&deg;&ndash;90&deg;C)</option>
+                  <option value="AS-ABS">AS-ABS (80&deg;&ndash;90&deg;C)</option>
+                  <option value="PP">PP</option>
+                  <option value="PCTG">PCTG (70&deg;&ndash;75&deg;C)</option>
+                  <option value="POM">POM</option>
+                  <option value="PET">PET (120&deg;&ndash;130&deg;C)</option>
+                  <option value="PETG">PETG (65&deg;C)</option>
+                  <option value="LD/HDPE">LD/HDPE</option>
+                  <option value="PS">PS (70&deg;&ndash;75&deg;C)</option>
+                  <option value="Lainnya">Lainnya</option>
+                </select>
+                <input type="text" class="form-input" id="pb_material_custom" placeholder="Ketik bahan..." style="display:none;" />
+              </div>
+              <div class="form-group"><label class="form-label">Berat Shoot (g)</label><input type="number" step="0.1" class="form-input" id="pb_berat_shoot" placeholder="0" /></div>
+              <div class="form-group"><label class="form-label">Berat Unit (g)</label><input type="number" step="0.1" class="form-input" id="pb_berat_unit" placeholder="0" /></div>
+              <div class="form-group"><label class="form-label">Berat Runner (g)</label><input type="number" step="0.1" class="form-input" id="pb_berat_runner" placeholder="0" /></div>
+              <div class="form-group"><label class="form-label">Cycle Time (s)</label><input type="number" step="0.1" class="form-input" id="pb_cycleTime" placeholder="0" /></div>
+            </div>
+
+            <!-- Kolom 3 -->
+            <div class="pb-inner-box">
+              <p class="subsection-label" style="margin-top:0;">Temperatur &deg;C</p>
+              <div class="form-group"><label class="form-label">Nozzle Temp</label><input type="number" class="form-input" id="pb_nozzle" placeholder="0" /></div>
+              <div class="form-group"><label class="form-label">Front Temp</label><input type="number" class="form-input" id="pb_front" placeholder="0" /></div>
+              <div class="form-group"><label class="form-label">Middle Temp</label><input type="number" class="form-input" id="pb_middle" placeholder="0" /></div>
+              <div class="form-group"><label class="form-label">Rear Temp</label><input type="number" class="form-input" id="pb_rear" placeholder="0" /></div>
+              <div class="form-group"><label class="form-label">Hopper Dryer</label><input type="number" class="form-input" id="pb_hopper" placeholder="0" /></div>
+              <div class="form-group"><label class="form-label">Cooling Cavity</label><input type="number" class="form-input" id="pb_coolCavity" placeholder="0" /></div>
+              <div class="form-group"><label class="form-label">Cooling Core</label><input type="number" class="form-input" id="pb_coolCore" placeholder="0" /></div>
+              <div class="form-group"><label class="form-label">Oil Temp</label><input type="number" class="form-input" id="pb_oilTemp" placeholder="0" /></div>
+            </div>
+
+            <!-- Kolom 4 -->
+            <div class="pb-inner-box">
+              <p class="subsection-label" style="margin-top:0;">Heater Control &deg;C</p>
+              <div class="form-group"><label class="form-label">Heater Control 1</label><input type="number" class="form-input" id="pb_heater1" placeholder="0" /></div>
+              <div class="form-group"><label class="form-label">Heater Control 2</label><input type="number" class="form-input" id="pb_heater2" placeholder="0" /></div>
+              <div class="form-group"><label class="form-label">Heater Control 3</label><input type="number" class="form-input" id="pb_heater3" placeholder="0" /></div>
+              <div class="form-group"><label class="form-label">Heater Control 4</label><input type="number" class="form-input" id="pb_heater4" placeholder="0" /></div>
+              <div class="form-group"><label class="form-label">Block</label><input type="number" class="form-input" id="pb_block" placeholder="0" /></div>
+              <div class="form-group"><label class="form-label">HN. Sprue</label><input type="number" class="form-input" id="pb_hnSprue" placeholder="0" /></div>
+            </div>
+          </div>
+          
+          <div class="pb-topbar-actions" style="justify-content: flex-end;">
+            <button class="pb-btn-save" id="pb_saveBtn"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Save Parameter</button>
+          </div>
+        </div>
+
+        <!-- 2. Mould Close / Open -->
+        <div class="pb-card pb-card-wide">
+          <div class="pb-card-header"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+            <h3 class="pb-card-title">Mould Close / Open</h3>
+          </div>
+          <div class="pb-table-wrap">
+            <table class="pb-table">
+              <thead>
+                <tr>
+                  <th class="pb-th-label">Stage</th>
+                  <th>Speed (%)</th>
+                  <th>Pos (mm)</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-mould-close">
+                <!-- Dynamic rows rendered by JS -->
+              </tbody>
+              <tbody id="tbody-mould-open">
+                <!-- Dynamic rows rendered by JS -->
+              </tbody>
+            </table>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 16px;">
+            <div class="pb-inner-box">
+              <p class="subsection-label" style="margin-top:0;">Mould Protect</p>
+              <div class="form-row">
+                <div class="form-group mb-0"><label class="form-label">Pro Time (s)</label><input type="number" step="0.1" class="form-input" id="pb_mp_time" placeholder="0" /></div>
+                <div class="form-group mb-0"><label class="form-label">Torque (%)</label><input type="number" step="0.1" class="form-input" id="pb_mp_torque" placeholder="0" /></div>
+              </div>
+            </div>
+            <div class="pb-inner-box">
+              <p class="subsection-label" style="margin-top:0;">Mould Open Monitor</p>
+              <div class="form-row">
+                <div class="form-group mb-0"><label class="form-label">Pro Time (%)</label><input type="number" step="0.1" class="form-input" id="pb_mo_time" placeholder="0" /></div>
+                <div class="form-group mb-0"><label class="form-label">Torque (%)</label><input type="number" step="0.1" class="form-input" id="pb_mo_torque" placeholder="0" /></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Injection — Stage 1 to 7 (Existing) -->
+        <div class="pb-card pb-card-wide">
+          <div class="pb-card-header"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="22" y1="12" x2="2" y2="12" />
+              <path
+                d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
+            </svg>
+            <h3 class="pb-card-title">Injection &mdash; Stage 1 to 7</h3>
+          </div>
+          <div class="pb-table-wrap">
+            <table class="pb-table">
+              <thead>
+                <tr>
+                  <th class="pb-th-label">Parameter</th>
+                  <th>St.1</th>
+                  <th>St.2</th>
+                  <th>St.3</th>
+                  <th>St.4</th>
+                  <th>St.5</th>
+                  <th>St.6</th>
+                  <th>St.7</th>
+                  <th class="pb-th-unit">Unit</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="pb-td-label">Speed (VI)</td>
+                  <td><input type="number" class="pb-input-sm" id="pb_v1" placeholder="0" /></td>
+                  <td><input type="number" class="pb-input-sm" id="pb_v2" placeholder="0" /></td>
+                  <td><input type="number" class="pb-input-sm" id="pb_v3" placeholder="0" /></td>
+                  <td><input type="number" class="pb-input-sm" id="pb_v4" placeholder="0" /></td>
+                  <td><input type="number" class="pb-input-sm" id="pb_v5" placeholder="0" /></td>
+                  <td><input type="number" class="pb-input-sm" id="pb_v6" placeholder="0" /></td>
+                  <td><input type="number" class="pb-input-sm" id="pb_v7" placeholder="0" /></td>
+                  <td class="pb-td-unit">mm/s</td>
+                </tr>
+                <tr>
+                  <td class="pb-td-label">Pressure (PH)</td>
+                  <td><input type="number" class="pb-input-sm" id="pb_p1" placeholder="0" /></td>
+                  <td><input type="number" class="pb-input-sm" id="pb_p2" placeholder="0" /></td>
+                  <td><input type="number" class="pb-input-sm" id="pb_p3" placeholder="0" /></td>
+                  <td><input type="number" class="pb-input-sm" id="pb_p4" placeholder="0" /></td>
+                  <td><input type="number" class="pb-input-sm" id="pb_p5" placeholder="0" /></td>
+                  <td><input type="number" class="pb-input-sm" id="pb_p6" placeholder="0" /></td>
+                  <td><input type="number" class="pb-input-sm" id="pb_p7" placeholder="0" /></td>
+                  <td class="pb-td-unit">MPa</td>
+                </tr>
+                <tr>
+                  <td class="pb-td-label">Position (LI)</td>
+                  <td><input type="number" class="pb-input-sm" id="pb_ls1" placeholder="0" /></td>
+                  <td><input type="number" class="pb-input-sm" id="pb_ls2" placeholder="0" /></td>
+                  <td><input type="number" class="pb-input-sm" id="pb_ls3" placeholder="0" /></td>
+                  <td><input type="number" class="pb-input-sm" id="pb_ls4" placeholder="0" /></td>
+                  <td><input type="number" class="pb-input-sm" id="pb_ls5" placeholder="0" /></td>
+                  <td><input type="number" class="pb-input-sm" id="pb_ls6" placeholder="0" /></td>
+                  <td><input type="number" class="pb-input-sm" id="pb_ls7" placeholder="0" /></td>
+                  <td class="pb-td-unit">mm</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 3. Holding Pressure (Table Format) -->
+        <div class="pb-card pb-card-wide">
+          <div class="pb-card-header"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 20V10" />
+              <path d="M12 20V4" />
+              <path d="M6 20v-6" />
+            </svg>
+            <h3 class="pb-card-title">Holding Pressure</h3>
+          </div>
+          <div class="pb-table-wrap">
+            <table class="pb-table">
+              <thead>
+                <tr>
+                  <th class="pb-th-label">Parameter</th>
+                  <th>5</th>
+                  <th>4</th>
+                  <th>3</th>
+                  <th>2</th>
+                  <th>1</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="pb-td-label">Pressure PL (MPa)</td>
+                  <td><input type="number" class="pb-input-sm" id="pb_hold_p5" placeholder="0" /></td>
+                  <td><input type="number" class="pb-input-sm" id="pb_hold_p4" placeholder="0" /></td>
+                  <td><input type="number" class="pb-input-sm" id="pb_hold_p3" placeholder="0" /></td>
+                  <td><input type="number" class="pb-input-sm" id="pb_hold_p2" placeholder="0" /></td>
+                  <td><input type="number" class="pb-input-sm" id="pb_hold_p1" placeholder="0" /></td>
+                </tr>
+                <tr>
+                  <td class="pb-td-label">Time TB (s)</td>
+                  <td><input type="number" class="pb-input-sm" id="pb_hold_t5" placeholder="0" /></td>
+                  <td><input type="number" class="pb-input-sm" id="pb_hold_t4" placeholder="0" /></td>
+                  <td><input type="number" class="pb-input-sm" id="pb_hold_t3" placeholder="0" /></td>
+                  <td><input type="number" class="pb-input-sm" id="pb_hold_t2" placeholder="0" /></td>
+                  <td><input type="number" class="pb-input-sm" id="pb_hold_t1" placeholder="0" /></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 3. Plastifikasi -->
+        <div class="pb-card pb-card-wide">
+          <div class="pb-card-header"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z" />
+              <path d="M12 8v4l3 3" />
+            </svg>
+            <h3 class="pb-card-title">Plastifikasi</h3>
+          </div>
+          <div class="pb-param-list">
+            <div class="pb-param-row"><label class="pb-param-label">Screw Speed</label>
+              <div class="pb-input-unit-wrap"><input type="number" class="pb-input" id="pb_screwSpeed"
+                  placeholder="0" /><span class="pb-unit-tag">rpm</span></div>
+            </div>
+            <div class="pb-param-row"><label class="pb-param-label">Back Press</label>
+              <div class="pb-input-unit-wrap"><input type="number" class="pb-input" id="pb_backPress" placeholder="0"
+                  step="0.1" /><span class="pb-unit-tag">MPa</span></div>
+            </div>
+            <div class="pb-param-row"><label class="pb-param-label">Position</label>
+              <div class="pb-input-unit-wrap"><input type="number" class="pb-input" id="pb_dosingPos" placeholder="0"
+                  step="0.1" /><span class="pb-unit-tag">mm</span></div>
+            </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Melt Decomp -->
+        <div class="pb-card pb-card-wide">
+          <div class="pb-card-header"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12h14" />
+              <path d="m12 5 7 7-7 7" />
+            </svg>
+            <h3 class="pb-card-title">Melt Decomp (Plast. Comp)</h3>
+          </div>
+          <div class="pb-param-list">
+            <div class="pb-param-row"><label class="pb-param-label">Speed VSB</label>
+              <div class="pb-input-unit-wrap"><input type="number" class="pb-input" id="pb_vsb" placeholder="0"
+                  step="0.1" /><span class="pb-unit-tag">mm/s</span></div>
+            </div>
+            <div class="pb-param-row"><label class="pb-param-label">Stroke LSB</label>
+              <div class="pb-input-unit-wrap"><input type="number" class="pb-input" id="pb_lsb" placeholder="0"
+                  step="0.1" /><span class="pb-unit-tag">mm</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. Ejector -->
+        <div class="pb-card pb-card-wide">
+          <div class="pb-card-header"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="17 11 21 7 17 3" />
+              <line x1="21" y1="7" x2="9" y2="7" />
+              <polyline points="7 21 3 17 7 13" />
+              <line x1="15" y1="17" x2="3" y2="17" />
+            </svg>
+            <h3 class="pb-card-title">Ejector</h3>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; padding: 16px;">
+            <div class="form-group mb-0"><label class="form-label">Knock Out No</label><input type="text" class="form-input" id="pb_ej_ko" placeholder="-" /></div>
+            <div class="form-group mb-0"><label class="form-label">Semi-Auto</label><input type="text" class="form-input" id="pb_ej_semi" placeholder="-" /></div>
+            <div class="form-group mb-0"><label class="form-label">Standard</label><input type="text" class="form-input" id="pb_ej_std" placeholder="-" /></div>
+            <div class="form-group mb-0"><label class="form-label">Pre-Eject</label><input type="text" class="form-input" id="pb_ej_pre" placeholder="-" /></div>
+          </div>
+        </div>
+
+        <!-- Cycle Time & Timing (Keep this since it has other timings) -->
+        <div class="pb-card">
+          <div class="pb-card-header"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+            <h3 class="pb-card-title">Cycle Time &amp; Timing</h3>
+          </div>
+          <div class="pb-param-list">
+            <div class="pb-param-row"><label class="pb-param-label">Cooling Time</label>
+              <div class="pb-input-unit-wrap"><input type="number" class="pb-input" id="pb_coolingTime" placeholder="0"
+                  step="0.1" /><span class="pb-unit-tag">s</span></div>
+            </div>
+            <div class="pb-param-row"><label class="pb-param-label">Cure Time</label>
+              <div class="pb-input-unit-wrap"><input type="number" class="pb-input" id="pb_cureTime" placeholder="0"
+                  step="0.1" /><span class="pb-unit-tag">s</span></div>
+            </div>
+            <div class="pb-param-row"><label class="pb-param-label">Injection Time</label>
+              <div class="pb-input-unit-wrap"><input type="number" class="pb-input" id="pb_injTime" placeholder="0"
+                  step="0.1" /><span class="pb-unit-tag">s</span></div>
+            </div>
+            <div class="pb-param-row"><label class="pb-param-label">Suck Back</label>
+              <div class="pb-input-unit-wrap"><input type="number" class="pb-input" id="pb_suckBack" placeholder="0"
+                  step="0.1" /><span class="pb-unit-tag">mm</span></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div><!-- /paramBankMode -->
+
+    <!-- ==========================================
+     COOLING SKETCH MODE
+=========================================== -->
+    <div id="coolingSketchMode" style="display:none;">
+      <div class="pb-card pb-card-wide" style="margin-top: 0;">
+        <div class="pb-card-header">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/>
+          </svg>
+          <h3 class="pb-card-title">Cooling Layout Sketch</h3>
+        </div>
+        <div class="canvas-toolbar" id="canvasToolbar">
+          <div class="canvas-tool-group">
+            <label class="canvas-tool-label">Tool:</label>
+            <div class="canvas-tool-group-buttons">
+              <button type="button" class="canvas-tool-btn active" data-tool="pencil" title="Freestyle">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+              </button>
+              <button type="button" class="canvas-tool-btn" data-tool="line" title="Garis Lurus">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="19" x2="19" y2="5"/></svg>
+              </button>
+              <button type="button" class="canvas-tool-btn" data-tool="rect" title="Kotak">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/></svg>
+              </button>
+              <button type="button" class="canvas-tool-btn" data-tool="circle" title="Bulat">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>
+              </button>
+              <button type="button" class="canvas-tool-btn" data-tool="eraser" title="Penghapus">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="canvas-tool-group">
+            <label class="canvas-tool-label">Warna:</label>
+            <input type="color" id="canvasColor" value="#1e40af" class="canvas-color-input" />
+          </div>
+          <div class="canvas-tool-group" style="flex:1; min-width:140px;">
+            <label class="canvas-tool-label">Ketebalan: <span id="canvasLineWidthDisplay">2</span>px</label>
+            <input type="range" min="1" max="10" value="2" id="canvasLineWidth" class="canvas-range" />
+          </div>
+          <div class="canvas-action-group">
+            <button type="button" class="canvas-btn canvas-btn-undo" id="canvasUndo">↩ Undo</button>
+            <button type="button" class="canvas-btn canvas-btn-clear" id="canvasClear">🗑 Clear</button>
+            <button type="button" class="canvas-btn" id="canvasResetView">🔍 Reset View</button>
+          </div>
+        </div>
+        <div style="overflow: auto; border-radius: 8px;">
+          <canvas id="coolingCanvas" width="800" height="400" style="border: 1px solid var(--border-color,#e5e7eb); border-radius: 8px; background: #fff; touch-action: none; width: 100%; display: block; cursor: crosshair;"></canvas>
+        </div>
+        <p style="font-size: 0.75rem; color: var(--text-light,#6b7280); margin-top: 8px; margin-bottom: 16px;">Gunakan Roda Mouse atau gestur Cubit (Pinch) untuk Zoom. Gambar jalur cooling layout secara bebas.</p>
+        
+        <div style="text-align: right;">
+          <button class="pb-btn-save" id="saveSketchBtn" style="display:inline-flex;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline>
+            </svg> Save Sketch
+          </button>
+        </div>
+      </div>
+    </div><!-- /coolingSketchMode -->
+
+
+
+    <!-- ==========================================
+     REPORT HISTORY 
+=========================================== -->
+    <div id="reportHistoryMode" style="display:none;">
       <div class="section-card">
         <div class="card-header">
           <div class="card-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 3h18M3 9h18M3 15h18M3 21h18"/>
+            </svg>
           </div>
           <div class="card-header-text">
-            <span class="card-badge">Section A</span>
-            <h1 class="card-title">Info Umum &amp; Injection Machine</h1>
-            <p class="card-desc">Data identitas trial dan spesifikasi mesin yang digunakan.</p>
+            <h2 class="card-title">Report History</h2>
+            <p class="card-desc">Daftar semua laporan MTER yang pernah tersimpan.</p>
           </div>
         </div>
+        <div class="rh-filter-bar" style="margin-bottom: 16px;">
+          <div class="form-group mb-0" style="flex:1; max-width:220px;"><label class="form-label">Pilih Tanggal</label><input type="date" class="form-input" id="rh_datePicker" /></div>
+          <button class="rh-filter-btn" id="rh_filterBtn"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13"
+              viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.35-4.35" />
+            </svg> Cari</button>
+          <button class="rh-clear-btn" id="rh_clearBtn">Reset</button>
+        </div>
+        <div class="rh-list" id="rhList">
+          <div class="rh-item">
+            <div class="rh-item-meta"><span class="rh-item-badge">Trial #3</span><span
+                class="rh-item-date">2026-07-20</span></div>
+            <div class="rh-item-info">
+              <p class="rh-item-mold">MOLD-XYZ-001 &mdash; Cover Body R/L</p>
+              <p class="rh-item-detail">Mesin: Mistsubishi 130 MEt 2 &bull; Material: ABS &bull; Judgment: APPROVED</p>
+            </div>
+            <div class="rh-item-actions">
+              <button class="rh-btn-view"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
+                  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg> View</button>
+              <button class="rh-btn-pdf"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
+                  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg> Download PDF</button>
+            </div>
+          </div>
+          <div class="rh-item">
+            <div class="rh-item-meta"><span class="rh-item-badge rh-badge-conditional">Trial #2</span><span
+                class="rh-item-date">2026-07-15</span></div>
+            <div class="rh-item-info">
+              <p class="rh-item-mold">MOLD-ABC-007 &mdash; Push Button</p>
+              <p class="rh-item-detail">Mesin: JSW 140 AD &bull; Material: PP &bull; Judgment: CONDITIONAL</p>
+            </div>
+            <div class="rh-item-actions">
+              <button class="rh-btn-view"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
+                  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg> View</button>
+              <button class="rh-btn-pdf"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
+                  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg> Download PDF</button>
+            </div>
+          </div>
+          <div class="rh-item">
+            <div class="rh-item-meta"><span class="rh-item-badge rh-badge-ng">Trial #1</span><span
+                class="rh-item-date">2026-07-08</span></div>
+            <div class="rh-item-info">
+              <p class="rh-item-mold">MOLD-DEF-003 &mdash; Hinge Cap</p>
+              <p class="rh-item-detail">Mesin: Haitian &bull; Material: PCR &bull; Judgment: REJECTED</p>
+            </div>
+            <div class="rh-item-actions">
+              <button class="rh-btn-view"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
+                  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg> View</button>
+              <button class="rh-btn-pdf"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
+                  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg> Download PDF</button>
+            </div>
+          </div>
+          <div class="rh-empty" id="rhEmpty" style="display:none;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 12h18M3 6h18M3 18h18" />
+            </svg>
+            <p>Tidak ada laporan ditemukan untuk tanggal yang dipilih.</p>
+          </div>
+        </div>
+      </div>
+    </div>
 
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Tanggal Trial <span class="req">*</span></label>
-            <input type="date" class="form-input" id="trialDate" />
+    <!-- ==========================================
+     ANALYTICS DASHBOARD 
+=========================================== -->
+    <div id="analyticsMode" style="display:none;">
+
+      <!-- Header & Filter -->
+      <div class="section-card" style="margin-bottom: 16px;">
+        <div class="card-header">
+          <div class="card-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/>
+            </svg>
           </div>
-          <div class="form-group">
-            <label class="form-label">Trial Ke- <span class="req">*</span></label>
-            <input type="number" class="form-input" id="trialNumber" placeholder="1" min="1" />
-          </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Nama Mold <span class="req">*</span></label>
-          <input type="text" class="form-input" id="moldName" placeholder="Contoh: MOLD-XYZ-001" />
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Part Name</label>
-            <input type="text" class="form-input" id="partName" placeholder="Nama part" />
-          </div>
-          <div class="form-group">
-            <label class="form-label">Part Number</label>
-            <input type="text" class="form-input" id="partNumber" placeholder="PN-12345" />
+          <div class="card-header-text">
+            <h2 class="card-title">Analisa &amp; Dashboard</h2>
+            <p class="card-desc">Visualisasi performa trial dan status mold.</p>
           </div>
         </div>
-        <div class="form-group">
-          <label class="form-label">Customer</label>
-          <input type="text" class="form-input" id="customer" placeholder="Nama customer / brand" />
-        </div>
-        <div class="divider"></div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Mesin <span class="req">*</span></label>
-            <select class="form-select" id="machineSelect">
-              <option value="">Pilih Mesin</option>
-              <option>Machine 80T</option><option>Machine 100T</option><option>Machine 150T</option>
-              <option>Machine 200T</option><option>Machine 250T</option><option>Machine 350T</option>
-              <option>Machine 450T</option><option>Machine 650T</option><option>Machine 850T</option>
-              <option>Machine 1000T</option><option>Other</option>
+        <div class="analytics-filter-bar">
+          <div class="form-group mb-0" style="flex:1; max-width:180px;">
+            <label class="form-label">Dari Tanggal</label>
+            <input type="date" class="form-input" id="analyticsStartDate" />
+          </div>
+          <div class="form-group mb-0" style="flex:1; max-width:180px;">
+            <label class="form-label">Sampai Tanggal</label>
+            <input type="date" class="form-input" id="analyticsEndDate" />
+          </div>
+          <div class="form-group mb-0" style="flex:1; max-width:200px;">
+            <label class="form-label">Mesin/Mould</label>
+            <select class="form-select" id="analyticsMachine">
+              <option value="all">Semua</option>
             </select>
           </div>
-          <div class="form-group">
-            <label class="form-label">Tonnage (T)</label>
-            <input type="number" class="form-input" id="tonnage" placeholder="200" />
+          <button class="rh-filter-btn" id="analyticsFilterBtn" style="margin-top:20px;">Terapkan Filter</button>
+        </div>
+      </div>
+
+      <!-- KPI Cards -->
+      <div class="analytics-kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg></div>
+          <div class="kpi-title">Total Trial</div>
+          <div class="kpi-value" id="kpiTotalTrial">0</div>
+        </div>
+        <div class="kpi-card kpi-card-success">
+          <div class="kpi-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div class="kpi-title">Approved Rate</div>
+          <div class="kpi-value kpi-success" id="kpiApprovedRate">0%</div>
+        </div>
+        <div class="kpi-card kpi-card-danger">
+          <div class="kpi-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+          <div class="kpi-title">Total Defect</div>
+          <div class="kpi-value kpi-danger" id="kpiTotalDefect">0</div>
+        </div>
+      </div>
+
+      <!-- Charts Grid -->
+      <div class="analytics-chart-grid">
+        <div class="section-card">
+          <h3 class="chart-title">Trend Reject / NG Rate</h3>
+          <div class="chart-wrapper">
+            <canvas id="trendChart"></canvas>
           </div>
         </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Material Resin</label>
-            <input type="text" class="form-input" id="resinMaterial" placeholder="PP, ABS, PC, PA66..." />
-          </div>
-          <div class="form-group">
-            <label class="form-label">Warna Material</label>
-            <input type="text" class="form-input" id="materialColor" placeholder="Natural, Black..." />
+        <div class="section-card">
+          <h3 class="chart-title">Status Mold Judgment</h3>
+          <div class="chart-wrapper">
+            <canvas id="judgmentChart"></canvas>
           </div>
         </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Jumlah Cavity</label>
-            <input type="number" class="form-input" id="cavityCount" placeholder="4" min="1" max="128" />
-          </div>
-          <div class="form-group">
-            <label class="form-label">Cycle Time Target (s)</label>
-            <input type="number" class="form-input" id="cycleTarget" placeholder="30" step="0.1" />
-          </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">PIC / Inspector</label>
-          <input type="text" class="form-input" id="inspector" placeholder="Nama PIC" />
-        </div>
-        <div class="form-group">
-          <label class="form-label">Catatan Umum</label>
-          <textarea class="form-textarea" id="generalNotes" placeholder="Catatan khusus untuk trial ini..."></textarea>
-        </div>
-        <button class="save-btn" id="saveBtnA" data-save-section="A">
-          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-          Simpan Section A
-        </button>
       </div>
     </div>
 
-    <!-- PANEL 2: Section B - Mold Mechanism -->
-    <div class="step-panel" id="panel2">
-      <div class="section-card">
-        <div class="card-header">
-          <div class="card-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
-          </div>
-          <div class="card-header-text">
-            <span class="card-badge">Section B</span>
-            <h2 class="card-title">Mold Mechanism Condition</h2>
-            <p class="card-desc">Pilih <strong>OK</strong> jika kondisi baik, atau <strong>NG</strong> jika ada masalah.</p>
-          </div>
-        </div>
-        <div class="info-box">
-          <p>Jika NG, kolom Action / Result / Remark otomatis muncul. Klik ikon catatan untuk input manual.</p>
-        </div>
-        <div class="toggle-group" id="moldMechItems"></div>
-        <button class="save-btn" id="saveBtnB" data-save-section="B">
-          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-          Simpan Section B
-        </button>
-      </div>
-    </div>
+  </main>
 
-    <!-- PANEL 3: Section C - Demoulding -->
-    <div class="step-panel" id="panel3">
-      <div class="section-card">
-        <div class="card-header">
-          <div class="card-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-          </div>
-          <div class="card-header-text">
-            <span class="card-badge">Section C</span>
-            <h2 class="card-title">Demoulding Condition</h2>
-            <p class="card-desc">Pilih <strong>NO</strong> jika tidak ada masalah, <strong>YES</strong> jika kondisi ditemukan.</p>
-          </div>
-        </div>
-        <div class="info-box">
-          <p>Jika YES, kolom Action / Result / Remark otomatis muncul. Klik ikon catatan untuk input manual.</p>
-        </div>
-        <div class="toggle-group" id="demouldingItems"></div>
-        <button class="save-btn" id="saveBtnC" data-save-section="C">
-          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-          Simpan Section C
-        </button>
-      </div>
-    </div>
+  <!-- Toasts -->
+  <div class="toast-stack" id="toastStack"></div>
 
-    <!-- PANEL 4: Section D - Aesthetic -->
-    <div class="step-panel" id="panel4">
-      <div class="section-card">
-        <div class="card-header">
-          <div class="card-icon green">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
-          </div>
-          <div class="card-header-text">
-            <span class="card-badge green">Section D</span>
-            <h2 class="card-title">Product Aesthetic Evaluation</h2>
-            <p class="card-desc">Pilih <strong>OK</strong> jika acceptable, atau <strong>NG</strong> jika defect ditemukan.</p>
-          </div>
-        </div>
-        <div class="info-box">
-          <p>Jika NG, kolom Action / Result / Remark otomatis muncul. Klik ikon catatan untuk input manual.</p>
-        </div>
-        <div class="toggle-group" id="aestheticItems"></div>
-        <button class="save-btn" id="saveBtnD" data-save-section="D">
-          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-          Simpan Section D
-        </button>
-      </div>
-    </div>
+  <!-- Print Layout Container -->
+  <div id="printLayout"></div>
 
-    <!-- PANEL 5: Section E - Cavity Layout -->
-    <div class="step-panel" id="panel5">
-      <div class="section-card">
-        <div class="card-header">
-          <div class="card-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-          </div>
-          <div class="card-header-text">
-            <span class="card-badge">Section E</span>
-            <h2 class="card-title">Cavity Layout</h2>
-            <p class="card-desc">Tap cavity untuk toggle OK &rarr; NG &rarr; Reset. Jumlah cavity dari Section A.</p>
-          </div>
-        </div>
-        <div class="cavity-controls">
-          <button class="cav-ctrl-btn" id="cavAllOk">
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            Semua OK
-          </button>
-          <button class="cav-ctrl-btn" id="cavAllNg">
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            Semua NG
-          </button>
-          <button class="cav-ctrl-btn" id="cavReset">
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.59"/></svg>
-            Reset
-          </button>
-        </div>
-        <div class="cavity-grid" id="cavityGrid"></div>
-        <button class="save-btn" id="saveBtnE" data-save-section="E">
-          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-          Simpan Section E
-        </button>
-      </div>
-    </div>
+  <!-- Script -->
+  <script src="script.js"></script>
 
-    <!-- PANEL 6: Section F - Conclusion -->
-    <div class="step-panel" id="panel6">
-      <div class="section-card">
-        <div class="card-header">
-          <div class="card-icon amber">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-          </div>
-          <div class="card-header-text">
-            <span class="card-badge amber">Section F</span>
-            <h2 class="card-title">Conclusion &amp; Judgment</h2>
-            <p class="card-desc">Ringkasan hasil evaluasi dari semua section.</p>
-          </div>
-        </div>
-        <div id="conclusionSummary"></div>
-        <div class="form-group">
-          <label class="form-label">Overall Judgment <span class="req">*</span></label>
-          <select class="form-select" id="overallJudgment">
-            <option value="">Pilih Judgment</option>
-            <option value="APPROVED">APPROVED — Mold siap produksi</option>
-            <option value="CONDITIONAL">CONDITIONAL — Perlu perbaikan minor</option>
-            <option value="REJECTED">REJECTED — Perlu perbaikan major</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Catatan Conclusion</label>
-          <textarea class="form-textarea" id="conclusionNotes" placeholder="Catatan tambahan untuk hasil evaluasi..."></textarea>
-        </div>
-        <button class="save-btn" id="saveBtnF" data-save-section="F">
-          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-          Simpan Section F
-        </button>
-      </div>
-    </div>
-
-    <!-- PANEL 7: Section G - Cooling Analysis -->
-    <div class="step-panel" id="panel7">
-      <div class="section-card">
-        <div class="card-header">
-          <div class="card-icon purple">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-          </div>
-          <div class="card-header-text">
-            <span class="card-badge purple">Section G</span>
-            <h2 class="card-title">Cooling Channel Analysis</h2>
-            <p class="card-desc">Masukkan suhu Inlet &amp; Outlet tiap zona. Grafik ter-update secara real-time.</p>
-          </div>
-        </div>
-        <div class="cooling-stats">
-          <div class="cooling-stat">
-            <span class="cs-val inlet" id="statAvgInlet">&#8212;</span>
-            <span class="cs-label">Avg. Inlet</span>
-          </div>
-          <div class="cooling-stat">
-            <span class="cs-val outlet" id="statAvgOutlet">&#8212;</span>
-            <span class="cs-label">Avg. Outlet</span>
-          </div>
-          <div class="cooling-stat">
-            <span class="cs-val delta" id="statDelta">&#8212;</span>
-            <span class="cs-label">Avg. &Delta;T</span>
-          </div>
-        </div>
-        <div class="chart-container">
-          <canvas id="coolingChart"></canvas>
-        </div>
-        <div class="cooling-input-grid">
-          <div class="cooling-zone-card">
-            <h4>Zona 1</h4>
-            <div class="cooling-zone-row">
-              <span class="cz-label">Inlet</span>
-              <input type="number" class="cz-input" id="z1_inlet" placeholder="25" step="0.1" />
-              <span class="cz-unit">&deg;C</span>
-            </div>
-            <div class="cooling-zone-row">
-              <span class="cz-label">Outlet</span>
-              <input type="number" class="cz-input" id="z1_outlet" placeholder="28" step="0.1" />
-              <span class="cz-unit">&deg;C</span>
-            </div>
-          </div>
-          <div class="cooling-zone-card">
-            <h4>Zona 2</h4>
-            <div class="cooling-zone-row">
-              <span class="cz-label">Inlet</span>
-              <input type="number" class="cz-input" id="z2_inlet" placeholder="25" step="0.1" />
-              <span class="cz-unit">&deg;C</span>
-            </div>
-            <div class="cooling-zone-row">
-              <span class="cz-label">Outlet</span>
-              <input type="number" class="cz-input" id="z2_outlet" placeholder="29" step="0.1" />
-              <span class="cz-unit">&deg;C</span>
-            </div>
-          </div>
-          <div class="cooling-zone-card">
-            <h4>Zona 3</h4>
-            <div class="cooling-zone-row">
-              <span class="cz-label">Inlet</span>
-              <input type="number" class="cz-input" id="z3_inlet" placeholder="25" step="0.1" />
-              <span class="cz-unit">&deg;C</span>
-            </div>
-            <div class="cooling-zone-row">
-              <span class="cz-label">Outlet</span>
-              <input type="number" class="cz-input" id="z3_outlet" placeholder="31" step="0.1" />
-              <span class="cz-unit">&deg;C</span>
-            </div>
-          </div>
-          <div class="cooling-zone-card">
-            <h4>Zona 4</h4>
-            <div class="cooling-zone-row">
-              <span class="cz-label">Inlet</span>
-              <input type="number" class="cz-input" id="z4_inlet" placeholder="25" step="0.1" />
-              <span class="cz-unit">&deg;C</span>
-            </div>
-            <div class="cooling-zone-row">
-              <span class="cz-label">Outlet</span>
-              <input type="number" class="cz-input" id="z4_outlet" placeholder="30" step="0.1" />
-              <span class="cz-unit">&deg;C</span>
-            </div>
-          </div>
-        </div>
-        <div class="form-group" style="margin-top:16px;">
-          <label class="form-label">Catatan Cooling Channel</label>
-          <textarea class="form-textarea" id="coolingNotes" placeholder="Jelaskan layout cooling channel, IN/OUT, kondisi pipa, dsb."></textarea>
-        </div>
-        <button class="save-btn" id="saveBtnG" data-save-section="G">
-          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-          Simpan Section G
-        </button>
-      </div>
-    </div>
-
-  </div><!-- /mterMode -->
-
-  <!-- ==================== PARAMETER BANK MODE ==================== -->
-  <div id="paramBankMode" style="display:none;">
-
-    <!-- Top Bar Filter -->
-    <div class="pb-topbar">
-      <div class="pb-topbar-filters">
-        <div class="form-group mb-0">
-          <label class="form-label">Pilih Mesin</label>
-          <select class="form-select" id="pb_machine">
-            <option value="">-- Pilih Mesin --</option>
-            <option>Machine 80T</option><option>Machine 100T</option><option>Machine 150T</option>
-            <option>Machine 200T</option><option>Machine 250T</option><option>Machine 350T</option>
-            <option>Machine 450T</option><option>Machine 650T</option><option>Machine 850T</option>
-            <option>Machine 1000T</option>
-          </select>
-        </div>
-        <div class="form-group mb-0">
-          <label class="form-label">Pilih Mould</label>
-          <select class="form-select" id="pb_mould">
-            <option value="">-- Pilih Mould --</option>
-            <option>MOLD-001</option><option>MOLD-002</option><option>MOLD-003</option>
-            <option>MOLD-004</option><option>MOLD-005</option><option>MOLD-006</option>
-            <option>MOLD-007</option><option>MOLD-008</option>
-          </select>
-        </div>
-        <div class="form-group mb-0">
-          <label class="form-label">Pilih Material</label>
-          <select class="form-select" id="pb_material">
-            <option value="">-- Pilih Material --</option>
-            <option>PP</option><option>ABS</option><option>PC</option><option>PA66</option>
-            <option>HDPE</option><option>LDPE</option><option>POM</option><option>TPE</option><option>PC+ABS</option>
-          </select>
-        </div>
-      </div>
-      <div class="pb-topbar-actions">
-        <button class="pb-btn-load" id="pb_loadBtn">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          Load Parameter
-        </button>
-        <button class="pb-btn-save" id="pb_saveBtn">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-          Save Parameter
-        </button>
-      </div>
-    </div>
-
-    <!-- Parameter Cards Grid -->
-    <div class="pb-grid">
-
-      <!-- Card 1: Temperature -->
-      <div class="pb-card">
-        <div class="pb-card-header">
-          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>
-          <h3 class="pb-card-title">Temperature</h3>
-          <span class="pb-card-unit">&deg;C</span>
-        </div>
-        <div class="pb-param-list">
-          <div class="pb-param-row"><label class="pb-param-label">Nozzle Temp</label><input type="number" class="pb-input" id="pb_nozzle" placeholder="0" /></div>
-          <div class="pb-param-row"><label class="pb-param-label">Front</label><input type="number" class="pb-input" id="pb_front" placeholder="0" /></div>
-          <div class="pb-param-row"><label class="pb-param-label">Middle</label><input type="number" class="pb-input" id="pb_middle" placeholder="0" /></div>
-          <div class="pb-param-row"><label class="pb-param-label">Rear</label><input type="number" class="pb-input" id="pb_rear" placeholder="0" /></div>
-          <div class="pb-param-row"><label class="pb-param-label">Cooling Cavity</label><input type="number" class="pb-input" id="pb_coolCavity" placeholder="0" /></div>
-          <div class="pb-param-row"><label class="pb-param-label">Cooling Core</label><input type="number" class="pb-input" id="pb_coolCore" placeholder="0" /></div>
-          <div class="pb-param-row"><label class="pb-param-label">Oil Temp</label><input type="number" class="pb-input" id="pb_oilTemp" placeholder="0" /></div>
-        </div>
-      </div>
-
-      <!-- Card 2: Injection Stage 1-7 -->
-      <div class="pb-card pb-card-wide">
-        <div class="pb-card-header">
-          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="12" x2="2" y2="12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
-          <h3 class="pb-card-title">Injection — Stage 1 to 7</h3>
-        </div>
-        <div class="pb-table-wrap">
-          <table class="pb-table">
-            <thead>
-              <tr>
-                <th class="pb-th-label">Parameter</th>
-                <th>St.1</th><th>St.2</th><th>St.3</th><th>St.4</th><th>St.5</th><th>St.6</th><th>St.7</th>
-                <th class="pb-th-unit">Unit</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td class="pb-td-label">Speed (V)</td>
-                <td><input type="number" class="pb-input-sm" id="pb_v1" placeholder="0" /></td>
-                <td><input type="number" class="pb-input-sm" id="pb_v2" placeholder="0" /></td>
-                <td><input type="number" class="pb-input-sm" id="pb_v3" placeholder="0" /></td>
-                <td><input type="number" class="pb-input-sm" id="pb_v4" placeholder="0" /></td>
-                <td><input type="number" class="pb-input-sm" id="pb_v5" placeholder="0" /></td>
-                <td><input type="number" class="pb-input-sm" id="pb_v6" placeholder="0" /></td>
-                <td><input type="number" class="pb-input-sm" id="pb_v7" placeholder="0" /></td>
-                <td class="pb-td-unit">mm/s</td>
-              </tr>
-              <tr>
-                <td class="pb-td-label">Pressure (P)</td>
-                <td><input type="number" class="pb-input-sm" id="pb_p1" placeholder="0" /></td>
-                <td><input type="number" class="pb-input-sm" id="pb_p2" placeholder="0" /></td>
-                <td><input type="number" class="pb-input-sm" id="pb_p3" placeholder="0" /></td>
-                <td><input type="number" class="pb-input-sm" id="pb_p4" placeholder="0" /></td>
-                <td><input type="number" class="pb-input-sm" id="pb_p5" placeholder="0" /></td>
-                <td><input type="number" class="pb-input-sm" id="pb_p6" placeholder="0" /></td>
-                <td><input type="number" class="pb-input-sm" id="pb_p7" placeholder="0" /></td>
-                <td class="pb-td-unit">MPa</td>
-              </tr>
-              <tr>
-                <td class="pb-td-label">Position (LS)</td>
-                <td><input type="number" class="pb-input-sm" id="pb_ls1" placeholder="0" /></td>
-                <td><input type="number" class="pb-input-sm" id="pb_ls2" placeholder="0" /></td>
-                <td><input type="number" class="pb-input-sm" id="pb_ls3" placeholder="0" /></td>
-                <td><input type="number" class="pb-input-sm" id="pb_ls4" placeholder="0" /></td>
-                <td><input type="number" class="pb-input-sm" id="pb_ls5" placeholder="0" /></td>
-                <td><input type="number" class="pb-input-sm" id="pb_ls6" placeholder="0" /></td>
-                <td><input type="number" class="pb-input-sm" id="pb_ls7" placeholder="0" /></td>
-                <td class="pb-td-unit">mm</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Card 3: Holding & Plastifikasi -->
-      <div class="pb-card">
-        <div class="pb-card-header">
-          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
-          <h3 class="pb-card-title">Holding &amp; Plastifikasi</h3>
-        </div>
-        <div class="pb-param-list">
-          <div class="pb-param-row">
-            <label class="pb-param-label">Hold Pressure</label>
-            <div class="pb-input-unit-wrap"><input type="number" class="pb-input" id="pb_holdPressure" placeholder="0" /><span class="pb-unit-tag">MPa</span></div>
-          </div>
-          <div class="pb-param-row">
-            <label class="pb-param-label">Hold Time</label>
-            <div class="pb-input-unit-wrap"><input type="number" class="pb-input" id="pb_holdTime" placeholder="0" step="0.1" /><span class="pb-unit-tag">s</span></div>
-          </div>
-          <div class="pb-param-row">
-            <label class="pb-param-label">Screw Speed</label>
-            <div class="pb-input-unit-wrap"><input type="number" class="pb-input" id="pb_screwSpeed" placeholder="0" /><span class="pb-unit-tag">rpm</span></div>
-          </div>
-          <div class="pb-param-row">
-            <label class="pb-param-label">Back Pressure</label>
-            <div class="pb-input-unit-wrap"><input type="number" class="pb-input" id="pb_backPress" placeholder="0" step="0.1" /><span class="pb-unit-tag">MPa</span></div>
-          </div>
-          <div class="pb-param-row">
-            <label class="pb-param-label">Dosing Position</label>
-            <div class="pb-input-unit-wrap"><input type="number" class="pb-input" id="pb_dosingPos" placeholder="0" step="0.1" /><span class="pb-unit-tag">mm</span></div>
-          </div>
-          <div class="pb-param-row">
-            <label class="pb-param-label">Cushion</label>
-            <div class="pb-input-unit-wrap"><input type="number" class="pb-input" id="pb_cushion" placeholder="0" step="0.1" /><span class="pb-unit-tag">mm</span></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Card 4: Mould Close / Open -->
-      <div class="pb-card">
-        <div class="pb-card-header">
-          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          <h3 class="pb-card-title">Mould Close / Open</h3>
-        </div>
-        <div class="pb-table-wrap">
-          <table class="pb-table">
-            <thead>
-              <tr>
-                <th class="pb-th-label">Stage</th>
-                <th>Speed (%)</th>
-                <th>Pos (mm)</th>
-                <th>Press (%)</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr class="pb-group-header"><td colspan="4">CLOSE</td></tr>
-              <tr>
-                <td class="pb-td-label">CL 1</td>
-                <td><input type="number" class="pb-input-sm" id="pb_cl1_sp" placeholder="0" /></td>
-                <td><input type="number" class="pb-input-sm" id="pb_cl1_pos" placeholder="0" /></td>
-                <td><input type="number" class="pb-input-sm" id="pb_cl1_pr" placeholder="0" /></td>
-              </tr>
-              <tr>
-                <td class="pb-td-label">CL 2</td>
-                <td><input type="number" class="pb-input-sm" id="pb_cl2_sp" placeholder="0" /></td>
-                <td><input type="number" class="pb-input-sm" id="pb_cl2_pos" placeholder="0" /></td>
-                <td><input type="number" class="pb-input-sm" id="pb_cl2_pr" placeholder="0" /></td>
-              </tr>
-              <tr>
-                <td class="pb-td-label">CL 3 (LP)</td>
-                <td><input type="number" class="pb-input-sm" id="pb_cl3_sp" placeholder="0" /></td>
-                <td><input type="number" class="pb-input-sm" id="pb_cl3_pos" placeholder="0" /></td>
-                <td><input type="number" class="pb-input-sm" id="pb_cl3_pr" placeholder="0" /></td>
-              </tr>
-              <tr class="pb-group-header"><td colspan="4">OPEN</td></tr>
-              <tr>
-                <td class="pb-td-label">OP 1</td>
-                <td><input type="number" class="pb-input-sm" id="pb_op1_sp" placeholder="0" /></td>
-                <td><input type="number" class="pb-input-sm" id="pb_op1_pos" placeholder="0" /></td>
-                <td><input type="number" class="pb-input-sm" id="pb_op1_pr" placeholder="0" /></td>
-              </tr>
-              <tr>
-                <td class="pb-td-label">OP 2</td>
-                <td><input type="number" class="pb-input-sm" id="pb_op2_sp" placeholder="0" /></td>
-                <td><input type="number" class="pb-input-sm" id="pb_op2_pos" placeholder="0" /></td>
-                <td><input type="number" class="pb-input-sm" id="pb_op2_pr" placeholder="0" /></td>
-              </tr>
-              <tr>
-                <td class="pb-td-label">OP 3</td>
-                <td><input type="number" class="pb-input-sm" id="pb_op3_sp" placeholder="0" /></td>
-                <td><input type="number" class="pb-input-sm" id="pb_op3_pos" placeholder="0" /></td>
-                <td><input type="number" class="pb-input-sm" id="pb_op3_pr" placeholder="0" /></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Card 5: Ejector -->
-      <div class="pb-card">
-        <div class="pb-card-header">
-          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 11 21 7 17 3"/><line x1="21" y1="7" x2="9" y2="7"/><polyline points="7 21 3 17 7 13"/><line x1="15" y1="17" x2="3" y2="17"/></svg>
-          <h3 class="pb-card-title">Ejector</h3>
-        </div>
-        <div class="pb-param-list">
-          <div class="pb-param-row">
-            <label class="pb-param-label">Fwd Speed</label>
-            <div class="pb-input-unit-wrap"><input type="number" class="pb-input" id="pb_ejectFwdSpd" placeholder="0" /><span class="pb-unit-tag">%</span></div>
-          </div>
-          <div class="pb-param-row">
-            <label class="pb-param-label">Fwd Pressure</label>
-            <div class="pb-input-unit-wrap"><input type="number" class="pb-input" id="pb_ejectFwdPr" placeholder="0" /><span class="pb-unit-tag">%</span></div>
-          </div>
-          <div class="pb-param-row">
-            <label class="pb-param-label">Fwd Position</label>
-            <div class="pb-input-unit-wrap"><input type="number" class="pb-input" id="pb_ejectFwdPos" placeholder="0" /><span class="pb-unit-tag">mm</span></div>
-          </div>
-          <div class="pb-param-row">
-            <label class="pb-param-label">Return Speed</label>
-            <div class="pb-input-unit-wrap"><input type="number" class="pb-input" id="pb_ejectRetSpd" placeholder="0" /><span class="pb-unit-tag">%</span></div>
-          </div>
-          <div class="pb-param-row">
-            <label class="pb-param-label">Return Pressure</label>
-            <div class="pb-input-unit-wrap"><input type="number" class="pb-input" id="pb_ejectRetPr" placeholder="0" /><span class="pb-unit-tag">%</span></div>
-          </div>
-          <div class="pb-param-row">
-            <label class="pb-param-label">Eject Count</label>
-            <div class="pb-input-unit-wrap"><input type="number" class="pb-input" id="pb_ejectCount" placeholder="0" /><span class="pb-unit-tag">x</span></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Card 6: Cycle & Timing -->
-      <div class="pb-card">
-        <div class="pb-card-header">
-          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          <h3 class="pb-card-title">Cycle Time &amp; Timing</h3>
-        </div>
-        <div class="pb-param-list">
-          <div class="pb-param-row">
-            <label class="pb-param-label">Cooling Time</label>
-            <div class="pb-input-unit-wrap"><input type="number" class="pb-input" id="pb_coolingTime" placeholder="0" step="0.1" /><span class="pb-unit-tag">s</span></div>
-          </div>
-          <div class="pb-param-row">
-            <label class="pb-param-label">Cure Time</label>
-            <div class="pb-input-unit-wrap"><input type="number" class="pb-input" id="pb_cureTime" placeholder="0" step="0.1" /><span class="pb-unit-tag">s</span></div>
-          </div>
-          <div class="pb-param-row">
-            <label class="pb-param-label">Injection Time</label>
-            <div class="pb-input-unit-wrap"><input type="number" class="pb-input" id="pb_injTime" placeholder="0" step="0.1" /><span class="pb-unit-tag">s</span></div>
-          </div>
-          <div class="pb-param-row">
-            <label class="pb-param-label">Cycle Target</label>
-            <div class="pb-input-unit-wrap"><input type="number" class="pb-input" id="pb_cycleTotal" placeholder="0" step="0.1" /><span class="pb-unit-tag">s</span></div>
-          </div>
-          <div class="pb-param-row">
-            <label class="pb-param-label">Suck Back</label>
-            <div class="pb-input-unit-wrap"><input type="number" class="pb-input" id="pb_suckBack" placeholder="0" step="0.1" /><span class="pb-unit-tag">mm</span></div>
-          </div>
-        </div>
-      </div>
-
-    </div><!-- /pb-grid -->
-  </div><!-- /paramBankMode -->
-
-</main>
-
-<!-- TOAST STACK -->
-<div class="toast-stack" id="toastStack"></div>
-
-<!-- SUCCESS MODAL -->
-<div class="modal-overlay" id="successModal">
-  <div class="modal-box">
-    <div class="modal-icon-wrap success">
-      <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-    </div>
-    <h3 class="modal-title">Berhasil!</h3>
-    <p class="modal-desc" id="modalDesc">Data berhasil disimpan.</p>
-    <div class="modal-actions">
-      <button class="modal-btn primary" onclick="closeModal('successModal')">OK, Tutup</button>
-    </div>
-  </div>
-</div>
-
-<!-- PRINT LAYOUT -->
-<div id="printLayout"></div>
-
-<!-- SCRIPTS -->
-<script src="script.js"></script>
 </body>
+
 </html>

@@ -153,6 +153,7 @@ body {
 }
 
 .home-header {
+  margin: -20px -16px 24px -16px;
   text-align: center;
   background:
     linear-gradient(180deg, rgba(224, 242, 254, 0.85) 0%, rgba(186, 230, 253, 0.85) 100%),
@@ -269,7 +270,8 @@ body {
   padding: 16px 20px;
   background: linear-gradient(180deg, #e0f2fe 0%, #f8fafc 100%);
   border-bottom: 1px solid #f1f5f9;
-  margin-bottom: 20px;
+  margin: -20px -16px 20px -16px;
+  justify-content: space-between;
 }
 
 .mter-menu-header .btn-back-home {
@@ -288,6 +290,12 @@ body {
   font-size: 1.15rem;
   font-weight: 700;
   color: #0f172a;
+  text-align: center;
+  margin-top: 10px;
+  margin-bottom: 24px;
+  display: block;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .mter-menu-container {
@@ -2219,12 +2227,18 @@ body {
     padding-right: 24px !important;
   }
 
-  /* Main content: centered, full-width without sidebar margin */
   .main-content {
     margin-left: auto !important;
     margin-right: auto !important;
     max-width: 960px;
     padding: 0 24px;
+  }
+
+  .mter-menu-header {
+    margin-top: 24px;
+    margin-left: 0;
+    margin-right: 0;
+    border-radius: 12px;
   }
 
   #mterMode {

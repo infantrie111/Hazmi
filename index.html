@@ -143,10 +143,14 @@
      MTER MENU MODE (GRID)
 =========================================== -->
     <div id="mterMenuMode" style="display:none;">
-      <div class="mter-menu-header">
+      <div class="mter-menu-header" style="justify-content: space-between;">
         <button class="btn-back-home" onclick="switchMode('home')">← Kembali</button>
-        <h2 class="mter-menu-title">Menu MTER Checksheet</h2>
+        <button onclick="startNewTrial()" style="background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          Trial Baru
+        </button>
       </div>
+      <h2 class="mter-menu-title">Menu MTER Checksheet</h2>
       <div class="mter-menu-container" id="mterMenuContainer">
         <!-- Injected by renderMterMenu() -->
       </div>
@@ -175,10 +179,14 @@
      PARAMETER BANK SUB-MENU
 =========================================== -->
     <div id="paramBankMenuMode" style="display:none;">
-      <div class="mter-menu-header">
+      <div class="mter-menu-header" style="justify-content: space-between;">
         <button class="btn-back-home" onclick="switchMode('home')">← Kembali</button>
-        <h2 class="mter-menu-title">Parameter Bank</h2>
+        <button onclick="startNewTrial()" style="background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          Trial Baru
+        </button>
       </div>
+      <h2 class="mter-menu-title">Parameter Bank</h2>
       <div class="mter-menu-container" id="paramBankMenuContainer">
         <!-- Injected by renderParamBankMenu() -->
       </div>
@@ -210,8 +218,8 @@
     <div id="reportMenuMode" style="display:none;">
       <div class="mter-menu-header">
         <button class="btn-back-home" onclick="switchMode('home')">← Kembali</button>
-        <h2 class="mter-menu-title">Dashboard &amp; Arsip</h2>
       </div>
+      <h2 class="mter-menu-title">Dashboard &amp; Arsip</h2>
       <div class="mter-menu-container" id="reportMenuContainer">
         <!-- Injected by renderReportMenu() -->
       </div>
@@ -1339,7 +1347,10 @@
      COOLING SKETCH MODE
 =========================================== -->
     <div id="coolingSketchMode" style="display:none;">
-      <button class="btn-back-to-menu" onclick="switchMode('home')">&#8592; Kembali ke Beranda</button>
+      <div class="mter-menu-header">
+        <button class="btn-back-home" onclick="switchMode('home')">← Kembali</button>
+      </div>
+      <h2 class="mter-menu-title">Cooling Sketch</h2>
       <div class="pb-card pb-card-wide" style="margin-top: 0;">
         <div class="pb-card-header">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"

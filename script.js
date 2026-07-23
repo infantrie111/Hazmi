@@ -354,7 +354,7 @@ function switchMode(mode, skipPushState = false) {
   document.getElementById('analyticsMode').style.display = 'none';
 
   // Show/hide app header based on mode
-  if (['home', 'mtermenu', 'parambankmenu', 'reportmenu'].includes(mode)) {
+  if (['home', 'mtermenu', 'parambankmenu', 'reportmenu', 'coolingsketch'].includes(mode)) {
     appHeader.style.display = 'none';
   } else {
     appHeader.style.display = 'flex';
@@ -1606,6 +1606,11 @@ async function loadParamBank() {
       PB_FIELD_IDS.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
       mouldCloseRows = 3; mouldOpenRows = 3;
       renderMouldRows('close'); renderMouldRows('open');
+      
+      if (currentMode === 'parambankmenu') {
+        renderParamBankMenu();
+      }
+      
       showToast('Data parameter belum tersedia untuk kombinasi ini.', 'info');
       if (btn) btn.disabled = false;
       return;
@@ -1656,6 +1661,9 @@ async function loadParamBank() {
       window.loadSketchToCanvas(data.canvasSketch);
     }
 
+    if (currentMode === 'parambankmenu') {
+      renderParamBankMenu();
+    }
     showToast('Parameter berhasil dimuat!', 'success');
   } catch (e) {
     console.error("Firebase loadParamBank Error:", e);
@@ -2467,6 +2475,74 @@ window.pbAddMouldRow = pbAddMouldRow;
 window.pbRemoveMouldRow = pbRemoveMouldRow;
 window.showToast = showToast;
 window.handleLogin = handleLogin;
+window.startNewTrial = function() {
+  if (!confirm("Yakin ingin memulai trial baru? Semua isian yang belum disimpan ke Cloud akan terhapus!")) return;
+
+  localStorage.removeItem('mter_draft');
+  localStorage.removeItem('mter_sketch_draft');
+  Object.keys(localStorage).forEach(key => {
+    if (key.startsWith('mter-saved-')) localStorage.removeItem(key);
+  });
+
+  document.querySelectorAll('input:not([type="checkbox"]):not([type="radio"]), select, textarea').forEach(el => {
+    if (el.id !== 'loginEmail' && el.id !== 'loginPassword') {
+      el.value = '';
+    }
+  });
+
+  const dateEl = document.getElementById('hi_date');
+  if (dateEl) dateEl.value = new Date().toISOString().split('T')[0];
+
+  const pbMould = document.getElementById('pb_mould');
+  if (pbMould) pbMould.value = '';
+
+  state.saved = {};
+  state.b1 = {}; state.b1Notes = {};
+  state.b2 = {}; state.b2Notes = {};
+  state.b3 = {}; state.b3Notes = {};
+  state.b4 = {}; state.b4Notes = {};
+  state.b5 = {}; state.b5Notes = {};
+  state.b6 = {}; state.b6Notes = {};
+  state.b7 = {}; state.b7Notes = {};
+  state.b8 = {}; state.b8Notes = {};
+  state.b9 = {}; state.b9Notes = {};
+  state.c = {}; state.cNotes = {};
+  state.d = {}; state.dNotes = {};
+  state.moldStatus = '';
+  
+  state.cavities.forEach(cav => {
+    cav.status = '';
+    cav.action = '';
+    cav.result = '';
+    cav.remark = '';
+  });
+
+  mouldCloseRows = 3; 
+  mouldOpenRows = 3;
+  if (typeof renderMouldRows === 'function') {
+    renderMouldRows('close'); 
+    renderMouldRows('open');
+  }
+
+  const clearBtn = document.getElementById('canvasClear');
+  if (clearBtn) {
+    clearBtn.click();
+  } else {
+    const canvas = document.getElementById('coolingCanvas');
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+  }
+
+  document.querySelectorAll('.t-btn, .cav-tok, .nipple-btn').forEach(btn => btn.classList.remove('sel', 'ok-sel', 'ng-sel', 'na-sel'));
+
+  if (typeof renderMterMenu === 'function') renderMterMenu();
+  if (typeof renderParamBankMenu === 'function') renderParamBankMenu();
+  
+  showToast('Siap untuk Trial Baru!', 'success');
+};
+
 window.handleLogout = handleLogout;
 
 document.addEventListener('DOMContentLoaded', init);

@@ -2,6 +2,29 @@
 // MTER Smart Checksheet v5.0 - script.js
 // ================================================================
 
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+import { 
+  getFirestore, 
+  collection, 
+  addDoc, 
+  getDocs, 
+  doc, 
+  setDoc, 
+  getDoc 
+} from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDfgmkRb1CC_TSxObOtiyvFuY2Z4Nqz7Pc",
+  authDomain: "mter-checksheet-hazma.firebaseapp.com",
+  projectId: "mter-checksheet-hazma",
+  storageBucket: "mter-checksheet-hazma.firebasestorage.app",
+  messagingSenderId: "554080082717",
+  appId: "1:554080082717:web:de924275307f8045671ff4"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
 // ----------------------------------------------------------------
 // DATA
 // ----------------------------------------------------------------
@@ -277,183 +300,266 @@ const PB_FIELD_IDS = [
 ];
 
 // ----------------------------------------------------------------
-// SIDEBAR BUILD
-// ----------------------------------------------------------------
-function buildSidebar() {
-  const nav = document.getElementById('sidebarNav');
-  if (!nav) return;
-  nav.innerHTML = '';
-
-  const modeLabel = _el('div', 'sidebar-section-label', 'Mode Utama');
-  nav.appendChild(modeLabel);
-
-  nav.appendChild(_modeBtn('parambank', 'Parameter Bank', 'CRUD Parameter Mesin',
-    '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg>',
-    () => { switchMode('parambank'); closeSidebar(); }
-  ));
-  nav.appendChild(_modeBtn('coolingsketch', 'Cooling Sketch', 'Sketsa Jalur Pendingin',
-    '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>',
-    () => { switchMode('coolingsketch'); closeSidebar(); }
-  ));
-  nav.appendChild(_modeBtn('mter', 'MTER Checksheet', 'Mold Trial Evaluation',
-    '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
-    () => { switchMode('mter'); closeSidebar(); }
-  ));
-  nav.appendChild(_modeBtn('analytics', 'Analisa & Dashboard', 'Visualisasi Data KPI',
-    '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>',
-    () => { switchMode('analytics'); closeSidebar(); }
-  ));
-  nav.appendChild(_modeBtn('reporthistory', 'Report History', 'Arsip Laporan MTER',
-    '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18M3 9h18M3 15h18M3 21h18"/></svg>',
-    () => { switchMode('reporthistory'); closeSidebar(); }
-  ));
-
-  if (currentMode === 'mter') {
-    nav.appendChild(_el('div', 'sidebar-divider'));
-    const secLabel = _el('div', 'sidebar-section-label', 'Sections');
-    nav.appendChild(secLabel);
-
-    MTER_NAV.forEach(item => {
-      if (item.type === 'item') nav.appendChild(_navItem(item));
-      else if (item.type === 'accordion') nav.appendChild(_accChapter(item));
-    });
-
-    nav.appendChild(_el('div', 'sidebar-divider'));
-
-    const exportBtn = document.createElement('button');
-    exportBtn.className = 'sidebar-item export-item';
-    exportBtn.innerHTML = `<span class="si-icon"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span><span style="font-size:.78rem;font-weight:600;">Export PDF Report</span>`;
-    exportBtn.addEventListener('click', () => { closeSidebar(); exportReport(); });
-    nav.appendChild(exportBtn);
-  }
-}
-
-function _el(tag, cls, text) {
-  const el = document.createElement(tag);
-  if (cls) el.className = cls;
-  if (text !== undefined) el.textContent = text;
-  return el;
-}
-
-function _modeBtn(modeKey, label, sub, iconHtml, onClick) {
-  const btn = document.createElement('button');
-  btn.className = `sidebar-mode-item${currentMode === modeKey ? ' active' : ''}`;
-  btn.innerHTML = `<span class="smi-icon">${iconHtml}</span><span class="smi-text">${label}<span class="smi-sub">${sub}</span></span>`;
-  btn.addEventListener('click', onClick);
-  return btn;
-}
-
-function _navItem(item) {
-  const btn = document.createElement('button');
-  const isActive = activePanelId === item.panelId;
-  btn.className = `sidebar-item${isActive ? ' active' : ''}`;
-  btn.innerHTML = `<span class="si-icon">${item.icon}</span><span style="flex:1;font-size:.78rem;">${item.label}</span>${state.saved[item.key] ? `<span class="si-badge">${CHECK_SVG}</span>` : ''}`;
-  btn.addEventListener('click', () => { showPanel(item.panelId); closeSidebar(); buildSidebar(); });
-  return btn;
-}
-
-function _accChapter(item) {
-  const wrap = document.createElement('div');
-  wrap.className = 'acc-chapter';
-  const isOpen = openAccordion === item.key;
-  const anyActive = item.children.some(c => c.panelId === activePanelId);
-
-  const btn = document.createElement('button');
-  btn.className = `acc-chapter-btn${anyActive ? ' active' : ''}${isOpen ? ' open' : ''}`;
-  btn.innerHTML = `<span class="acc-icon">${item.icon}</span><span style="flex:1;font-size:.79rem;font-weight:600;">${item.label}</span><span class="acc-chevron">${CHEVRON_SVG}</span>`;
-  btn.addEventListener('click', () => {
-    openAccordion = openAccordion === item.key ? null : item.key;
-    buildSidebar();
-  });
-
-  const children = document.createElement('div');
-  children.className = `acc-children${isOpen ? ' open' : ''}`;
-
-  item.children.forEach(child => {
-    const subBtn = document.createElement('button');
-    const isChildActive = activePanelId === child.panelId;
-    subBtn.className = `acc-sub-item${isChildActive ? ' active' : ''}`;
-    subBtn.innerHTML = `<span style="font-size:.75rem;">${child.label}</span>${state.saved[child.key] ? `<span class="si-badge" style="margin-left:auto;">${CHECK_SVG}</span>` : ''}`;
-    subBtn.addEventListener('click', () => { showPanel(child.panelId); closeSidebar(); buildSidebar(); });
-    children.appendChild(subBtn);
-  });
-
-  wrap.appendChild(btn);
-  wrap.appendChild(children);
-  return wrap;
-}
+// (Sidebar functions removed — navigation uses home-grid menu)
 
 // ----------------------------------------------------------------
 // PANEL SHOW
 // ----------------------------------------------------------------
-function showPanel(panelId) {
-  if (currentMode !== 'mter') switchMode('mter');
+function showPanel(panelId, skipPushState = false) {
+  // Determine which mode owns this panel and go there if needed
+  const isPbPanel = panelId.startsWith('panel-pb-');
+  const targetMode = isPbPanel ? 'parambank' : 'mter';
+  if (currentMode !== targetMode) switchMode(targetMode, true);
+
   activePanelId = panelId;
   sessionStorage.setItem('activePanelId', panelId);
   document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
   document.getElementById(panelId)?.classList.add('active');
   window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  if (!skipPushState) {
+    history.pushState({ mode: targetMode, panelId: panelId }, '', '#' + targetMode + '-' + panelId);
+  }
 }
 
 // ----------------------------------------------------------------
 // MODE SWITCHING
 // ----------------------------------------------------------------
-function switchMode(mode) {
+function switchMode(mode, skipPushState = false) {
   currentMode = mode;
   sessionStorage.setItem('currentMode', mode);
-  const mterEl = document.getElementById('mterMode');
-  const pbEl = document.getElementById('paramBankMode');
-  const rhEl = document.getElementById('reportHistoryMode');
-  const csEl = document.getElementById('coolingSketchMode');
-  const hTitle = document.getElementById('headerTitle');
-  const hSub = document.getElementById('headerSub');
+  document.body.classList.toggle('is-home', mode === 'home');
 
-  mterEl.style.display = 'none';
-  pbEl.style.display = 'none';
-  rhEl.style.display = 'none';
-  if(csEl) csEl.style.display = 'none';
+  const mterEl       = document.getElementById('mterMode');
+  const mterMenuEl   = document.getElementById('mterMenuMode');
+  const homeEl       = document.getElementById('homeMode');
+  const pbEl         = document.getElementById('paramBankMode');
+  const pbMenuEl     = document.getElementById('paramBankMenuMode');
+  const rhEl         = document.getElementById('reportHistoryMode');
+  const reportMenuEl = document.getElementById('reportMenuMode');
+  const csEl         = document.getElementById('coolingSketchMode');
+  const appHeader    = document.getElementById('appHeader');
+  const hTitle       = document.getElementById('headerTitle');
+  const hSub         = document.getElementById('headerSub');
+
+  // Hide all modes
+  [mterEl, mterMenuEl, homeEl, pbEl, pbMenuEl, rhEl, reportMenuEl, csEl].forEach(el => {
+    if (el) el.style.display = 'none';
+  });
   document.getElementById('analyticsMode').style.display = 'none';
 
-  if (mode === 'mter') {
-    mterEl.style.display = '';
+  // Show/hide app header based on mode
+  if (['home', 'mtermenu', 'parambankmenu', 'reportmenu'].includes(mode)) {
+    appHeader.style.display = 'none';
+  } else {
+    appHeader.style.display = 'flex';
+  }
+
+  // Activate the right container
+  if (mode === 'home') {
+    if (homeEl) homeEl.style.display = 'block';
+  } else if (mode === 'mtermenu') {
+    if (mterMenuEl) { mterMenuEl.style.display = 'block'; renderMterMenu(); }
+  } else if (mode === 'parambankmenu') {
+    if (pbMenuEl) { pbMenuEl.style.display = 'block'; renderParamBankMenu(); }
+  } else if (mode === 'reportmenu') {
+    if (reportMenuEl) { reportMenuEl.style.display = 'block'; renderReportMenu(); }
+  } else if (mode === 'mter') {
+    if (mterEl) mterEl.style.display = '';
     hTitle.textContent = 'MTER Checksheet';
-    hSub.textContent = 'Mold Trial & Evaluation Report';
+    hSub.textContent   = 'Mold Trial & Evaluation Report';
     if (!activePanelId) {
       activePanelId = 'panel-header-info';
       document.getElementById('panel-header-info')?.classList.add('active');
     }
   } else if (mode === 'parambank') {
-    pbEl.style.display = '';
+    if (pbEl) pbEl.style.display = '';
     hTitle.textContent = 'Parameter Bank';
-    hSub.textContent = 'Standardisasi Parameter Mesin';
+    hSub.textContent   = 'Standardisasi Parameter Mesin';
+    // Show first panel if nothing active
+    if (!activePanelId || !activePanelId.startsWith('panel-pb-')) {
+      activePanelId = 'panel-pb-umum';
+    }
+    document.querySelectorAll('#paramBankMode .step-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById(activePanelId)?.classList.add('active');
   } else if (mode === 'coolingsketch') {
-    if(csEl) csEl.style.display = '';
+    if (csEl) csEl.style.display = '';
     hTitle.textContent = 'Cooling Sketch';
-    hSub.textContent = 'Sketsa Jalur Pendingin Mould';
+    hSub.textContent   = 'Sketsa Jalur Pendingin Mould';
   } else if (mode === 'reporthistory') {
-    rhEl.style.display = '';
+    if (rhEl) rhEl.style.display = 'block';
     hTitle.textContent = 'Report History';
-    hSub.textContent = 'Arsip Laporan Trial';
+    hSub.textContent   = 'Arsip Laporan MTER';
     renderReportHistory();
   } else if (mode === 'analytics') {
-    document.getElementById('analyticsMode').style.display = '';
+    document.getElementById('analyticsMode').style.display = 'block';
     hTitle.textContent = 'Analisa & Dashboard';
-    hSub.textContent = 'KPI & Performance Mold';
+    hSub.textContent   = 'Visualisasi Data KPI';
     renderAnalyticsDashboard();
   }
-  buildSidebar();
+
+  if (!skipPushState && !['mter', 'parambank'].includes(mode)) {
+    history.pushState({ mode: mode }, '', '#' + mode);
+  }
+
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
+
+function renderMterMenu() {
+  const container = document.getElementById('mterMenuContainer');
+  if (!container) return;
+  
+  const mterMenuData = [
+    { title: 'Informasi Umum', items: [
+      { label: 'Header Info', id: 'HeaderInfo', panel: 'panel-header-info', bg: '#dcfce7', col: '#16a34a', icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>' },
+      { label: 'A. Mesin Injeksi', id: 'InjMachine', panel: 'panel-inj-machine', bg: '#dcfce7', col: '#16a34a', icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><path d="M6 14v-4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v4"/><circle cx="12" cy="18" r="2"/></svg>' }
+    ]},
+    { title: 'B. Mold Mechanism', items: [
+      { label: 'B.1 Opening', id: 'B1Opening', panel: 'panel-b1-opening', bg: '#f3e8ff', col: '#9333ea', icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>' },
+      { label: 'B.2 Slider', id: 'B2Slider', panel: 'panel-b2-slider', bg: '#f3e8ff', col: '#9333ea', icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>' },
+      { label: 'B.3 Ejector', id: 'B3Ejector', panel: 'panel-b3-ejector', bg: '#f3e8ff', col: '#9333ea', icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="16 12 12 8 8 12"/><line x1="12" y1="16" x2="12" y2="8"/></svg>' },
+      { label: 'B.4 Hydraulic', id: 'B4Hydraulic', panel: 'panel-b4-hydraulic', bg: '#f3e8ff', col: '#9333ea', icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/></svg>' },
+      { label: 'B.5 Cooling', id: 'B5Cooling', panel: 'panel-b5-cooling', bg: '#f3e8ff', col: '#9333ea', icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>' },
+      { label: 'B.6 Hot Runner', id: 'B6HotRunner', panel: 'panel-b6-hotrunner', bg: '#f3e8ff', col: '#9333ea', icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="M9 15l3-3 3 3"/></svg>' },
+      { label: 'B.7 Unscrewing', id: 'B7Unscrewing', panel: 'panel-b7-unscrewing', bg: '#f3e8ff', col: '#9333ea', icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 12a4 4 0 0 0-8 0"/></svg>' },
+      { label: 'B.8 Take Out', id: 'B8TakeOut', panel: 'panel-b8-takeout', bg: '#f3e8ff', col: '#9333ea', icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5.5"/><polyline points="7 12 3 15 7 18"/><line x1="21" y1="3" x2="16" y2="8"/><line x1="16" y1="3" x2="21" y2="8"/></svg>' },
+      { label: 'B.9 Balancing', id: 'B9Balancing', panel: 'panel-b9-balancing', bg: '#f3e8ff', col: '#9333ea', icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>' }
+    ]},
+    { title: 'Evaluasi Part', items: [
+      { label: 'C. Demoulding', id: 'CDemoulding', panel: 'panel-c-demoulding', bg: '#e0f2fe', col: '#0284c7', icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>' },
+      { label: 'D. Aesthetic', id: 'DAesthetic', panel: 'panel-d-aesthetic', bg: '#e0f2fe', col: '#0284c7', icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>' },
+      { label: 'E. Cavity', id: 'ECavity', panel: 'panel-e-cavity', bg: '#e0f2fe', col: '#0284c7', icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><rect x="7" y="7" width="3" height="9"/><rect x="14" y="7" width="3" height="5"/></svg>' },
+      { label: 'F. Conclusion', id: 'FConclusion', panel: 'panel-f-conclusion', bg: '#e0f2fe', col: '#0284c7', icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>' }
+    ]}
+  ];
+
+  let html = '';
+  mterMenuData.forEach(cat => {
+    html += `<div class="mter-menu-category">
+      <div class="mter-menu-category-title">${cat.title}</div>
+      <div class="mter-grid">`;
+    cat.items.forEach(item => {
+      const isSaved = state.saved[item.id];
+      html += `
+        <div class="mter-item" onclick="showPanel('${item.panel}')">
+          <div class="mter-icon-wrap" style="background:${item.bg || ''}; color:${item.col || ''};">
+            ${item.icon}
+            ${isSaved ? '<div class="mter-check"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>' : ''}
+          </div>
+          <div class="mter-item-label">${item.label}</div>
+        </div>
+      `;
+    });
+    html += `</div></div>`;
+  });
+  container.innerHTML = html;
+}
+function renderParamBankMenu() {
+  const container = document.getElementById('paramBankMenuContainer');
+  if (!container) return;
+
+  const pbMenuData = [
+    { label: 'Informasi Umum',           panel: 'panel-pb-umum',         color: '#3b82f6',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>' },
+    { label: 'Material & Berat',          panel: 'panel-pb-material',     color: '#8b5cf6',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>' },
+    { label: 'Temperatur (\u00b0C)',        panel: 'panel-pb-temp',         color: '#06b6d4',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>' },
+    { label: 'Heater Control (\u00b0C)',    panel: 'panel-pb-heater',       color: '#f59e0b',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>' },
+    { label: 'Mould Close / Open',        panel: 'panel-pb-mouldclose',   color: '#10b981',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>' },
+    { label: 'Injection',                 panel: 'panel-pb-injection',    color: '#ef4444',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="12" x2="2" y2="12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>' },
+    { label: 'Holding Pressure',          panel: 'panel-pb-holding',      color: '#6366f1',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>' },
+    { label: 'Plastifikasi & Melt Decomp',panel: 'panel-pb-plastifikasi', color: '#0ea5e9',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z"/><path d="M12 8v4l3 3"/></svg>' },
+    { label: 'Ejector',                   panel: 'panel-pb-ejector',      color: '#84cc16',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 11 21 7 17 3"/><line x1="21" y1="7" x2="9" y2="7"/><polyline points="7 21 3 17 7 13"/><line x1="15" y1="17" x2="3" y2="17"/></svg>' },
+    { label: 'Cycle Time & Timing',       panel: 'panel-pb-cycletime',    color: '#f97316',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>' },
+  ];
+
+  let html = '<div class="mter-menu-category"><div class="mter-grid">';
+  pbMenuData.forEach(item => {
+    html += `
+      <div class="mter-item" onclick="showPanel('${item.panel}')">
+        <div class="mter-icon-wrap" style="background:${item.color}20; color:${item.color};">
+          ${item.icon}
+        </div>
+        <div class="mter-item-label">${item.label}</div>
+      </div>
+    `;
+  });
+  html += '</div></div>';
+  container.innerHTML = html;
+}
+
+function renderReportMenu() {
+  const container = document.getElementById('reportMenuContainer');
+  if (!container) return;
+
+  const reportMenuData = [
+    { label: 'Report History\n(Arsip)',      mode: 'reporthistory', color: '#3b82f6',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18M3 9h18M3 15h18M3 21h18"/></svg>' },
+    { label: 'Analisa &amp;\nDashboard (KPI)', mode: 'analytics',     color: '#10b981',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>' },
+  ];
+
+  let html = '<div class="mter-menu-category"><div class="mter-grid">';
+  reportMenuData.forEach(item => {
+    const labelHtml = item.label.replace('\n', '<br>');
+    html += `
+      <div class="mter-item" onclick="switchMode('${item.mode}')">
+        <div class="mter-icon-wrap" style="background:${item.color}20; color:${item.color};">
+          ${item.icon}
+        </div>
+        <div class="mter-item-label">${labelHtml}</div>
+      </div>
+    `;
+  });
+  html += '</div></div>';
+  container.innerHTML = html;
+}
+
+
+window.addEventListener('popstate', (e) => {
+  if (e.state) {
+    if (e.state.mode === 'mter' && e.state.panelId) {
+      showPanel(e.state.panelId, true);
+    } else if (e.state.mode) {
+      switchMode(e.state.mode, true);
+    }
+  } else {
+    // If no state exists (e.g. initial load or wiped history), force fallback to home
+    switchMode('home', false);
+  }
+});
 
 // ----------------------------------------------------------------
 // REPORT HISTORY RENDER
 // ----------------------------------------------------------------
-function renderReportHistory() {
+async function renderReportHistory() {
   const listEl = document.getElementById('rhList');
   const emptyEl = document.getElementById('rhEmpty');
   if (!listEl || !emptyEl) return;
 
-  const saved = JSON.parse(localStorage.getItem('mter-reports') || '[]');
+  listEl.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-light);">Memuat laporan dari database...</div>';
+  
+  let saved = [];
+  try {
+    const querySnapshot = await getDocs(collection(db, "reports"));
+    querySnapshot.forEach((doc) => {
+      saved.push({ id: doc.id, ...doc.data() });
+    });
+    // Sort descending by date
+    saved.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+  } catch (e) {
+    console.error("Firebase fetch reports error:", e);
+    showToast('Gagal memuat riwayat laporan.', 'error');
+  }
+
   listEl.innerHTML = '';
 
   if (saved.length === 0) {
@@ -503,6 +609,7 @@ function buildToggleItems(containerId, items, stateKey, notesKey) {
         <div class="ti-controls">
           <button class="t-btn ok${s === 'OK' ? ' sel' : ''}" data-val="OK">OK</button>
           <button class="t-btn ng${s === 'NG' ? ' sel' : ''}" data-val="NG">NG</button>
+          <button class="t-btn na${s === 'N/A' ? ' sel' : ''}" data-val="N/A">N/A</button>
           <button class="note-icon-btn${hasData ? ' is-open' : ''}" title="Tambah Catatan">${NOTE_SVG}</button>
         </div>
       </div>
@@ -572,6 +679,7 @@ function buildToggleItemsNoYes(containerId, items, stateKey, notesKey) {
         <div class="ti-controls">
           <button class="t-btn ok${s === 'YES' ? ' sel' : ''}" data-val="YES">YES</button>
           <button class="t-btn ng${s === 'NO' ? ' sel' : ''}" data-val="NO">NO</button>
+          <button class="t-btn na${s === 'N/A' ? ' sel' : ''}" data-val="N/A">N/A</button>
           <button class="note-icon-btn${hasData ? ' is-open' : ''}" title="Tambah Catatan">${NOTE_SVG}</button>
         </div>
       </div>
@@ -694,6 +802,7 @@ function buildB5CoolingItems() {
         <div class="ti-controls">
           <button class="t-btn ok${s === 'OK' ? ' sel' : ''}" data-val="OK">OK</button>
           <button class="t-btn ng${s === 'NG' ? ' sel' : ''}" data-val="NG">NG</button>
+          <button class="t-btn na${s === 'N/A' ? ' sel' : ''}" data-val="N/A">N/A</button>
           <button class="note-icon-btn${hasData ? ' is-open' : ''}" title="Tambah Catatan">${NOTE_SVG}</button>
         </div>
       </div>
@@ -819,6 +928,7 @@ function renderCavityList() {
         <div class="ti-controls">
           <button class="cav-tok${cav.status === 'ok' ? ' ok-sel' : ''}" data-s="ok">OK</button>
           <button class="cav-tok${cav.status === 'ng' ? ' ng-sel' : ''}" data-s="ng">NG</button>
+          <button class="cav-tok${cav.status === 'na' ? ' na-sel' : ''}" data-s="na">N/A</button>
           <button class="note-icon-btn${notesOpen ? ' is-open' : ''}" title="Tambah Catatan">${NOTE_SVG}</button>
         </div>
       </div>
@@ -846,6 +956,7 @@ function renderCavityList() {
           b.className = 'cav-tok';
           if (b.dataset.s === 'ok' && state.cavities[i].status === 'ok') b.classList.add('ok-sel');
           if (b.dataset.s === 'ng' && state.cavities[i].status === 'ng') b.classList.add('ng-sel');
+          if (b.dataset.s === 'na' && state.cavities[i].status === 'na') b.classList.add('na-sel');
         });
       });
     });
@@ -873,7 +984,6 @@ function renderCavityList() {
 // ----------------------------------------------------------------
 function saveSection(key) {
   state.saved[key] = true;
-  buildSidebar();
   localStorage.setItem(`mter-saved-${key}`, '1');
 
   const btn = document.querySelector(`[data-save-section="${key}"]`);
@@ -907,19 +1017,29 @@ function initRadioGroup(groupId, stateKey) {
 // ----------------------------------------------------------------
 const MOULD_LS_KEY = 'mter-mould-list';
 
-function getMouldList() {
-  try { return JSON.parse(localStorage.getItem(MOULD_LS_KEY)) || []; }
-  catch { return []; }
+async function getMouldList() {
+  try {
+    const docSnap = await getDoc(doc(db, "moulds", "data"));
+    if (docSnap.exists()) return docSnap.data().list || [];
+    return [];
+  } catch (e) {
+    console.error("Firebase getMouldList Error:", e);
+    return [];
+  }
 }
 
-function saveMouldList(list) {
-  localStorage.setItem(MOULD_LS_KEY, JSON.stringify(list));
+async function saveMouldList(list) {
+  try {
+    await setDoc(doc(db, "moulds", "data"), { list: list });
+  } catch (e) {
+    console.error("Firebase saveMouldList Error:", e);
+  }
 }
 
-function renderMouldSelect(selectValue) {
+async function renderMouldSelect(selectValue) {
   const sel = document.getElementById('pb_mould');
   if (!sel) return;
-  const list = getMouldList();
+  const list = await getMouldList();
   const curr = selectValue !== undefined ? selectValue : sel.value;
   sel.innerHTML = '<option value="">-- Pilih Mould --</option>';
   list.forEach(m => {
@@ -936,33 +1056,39 @@ function renderMouldSelect(selectValue) {
   sel.appendChild(addOpt);
 }
 
-function initMouldDropdown() {
-  renderMouldSelect('');
+async function initMouldDropdown() {
+  await renderMouldSelect('');
   const sel = document.getElementById('pb_mould');
   if (!sel) return;
-  sel.addEventListener('change', () => {
+  sel.addEventListener('change', async () => {
     if (sel.value !== 'tambah_baru') return;
     const name = prompt('Masukkan nama Mould baru:')?.trim();
-    if (!name) { renderMouldSelect(''); return; }
-    const list = getMouldList();
-    if (list.includes(name)) { showToast('Nama Mould sudah ada.', 'info'); renderMouldSelect(name); return; }
+    if (!name) { await renderMouldSelect(''); return; }
+    sel.disabled = true;
+    showToast('Menyimpan...', 'info');
+    const list = await getMouldList();
+    if (list.includes(name)) { showToast('Nama Mould sudah ada.', 'info'); await renderMouldSelect(name); sel.disabled = false; return; }
     list.push(name);
-    saveMouldList(list);
-    renderMouldSelect(name);
+    await saveMouldList(list);
+    await renderMouldSelect(name);
+    sel.disabled = false;
     showToast(`Mould "${name}" berhasil ditambahkan!`, 'success');
   });
 
   const delBtn = document.getElementById('pb_mould_del');
   if (!delBtn) return;
-  delBtn.addEventListener('click', () => {
+  delBtn.addEventListener('click', async () => {
     const val = document.getElementById('pb_mould')?.value;
     if (!val || val === '' || val === 'tambah_baru') {
       showToast('Pilih Mould yang ingin dihapus terlebih dahulu.', 'info'); return;
     }
     if (!confirm(`Hapus Mould "${val}" dari daftar?`)) return;
-    const list = getMouldList().filter(m => m !== val);
-    saveMouldList(list);
-    renderMouldSelect('');
+    delBtn.disabled = true;
+    showToast('Menghapus...', 'info');
+    const list = (await getMouldList()).filter(m => m !== val);
+    await saveMouldList(list);
+    await renderMouldSelect('');
+    delBtn.disabled = false;
     showToast(`Mould "${val}" berhasil dihapus.`, 'success');
   });
 }
@@ -1323,20 +1449,27 @@ function initCoolingCanvas() {
     if (d) d.textContent = this.value;
   });
 
-  document.getElementById('saveSketchBtn')?.addEventListener('click', () => {
+  document.getElementById('saveSketchBtn')?.addEventListener('click', async () => {
     const key = getPBKey();
     if (!key) { showToast('Pilih Mesin, Mould, dan Material terlebih dahulu (di tab Parameter Bank)!', 'error'); return; }
     
-    let existingData = localStorage.getItem(key);
-    let pbData = existingData ? JSON.parse(existingData) : {};
-    
-    pbData.canvasSketch = mainOffscreenCanvas.toDataURL('image/png');
-    localStorage.setItem(key, JSON.stringify(pbData));
-    showToast('Sketsa Cooling Layout berhasil disimpan!', 'success');
+    showToast('Menyimpan sketsa...', 'info');
+    try {
+      const docRef = doc(db, "parameters", key);
+      const docSnap = await getDoc(docRef);
+      let pbData = docSnap.exists() ? docSnap.data() : {};
+      
+      pbData.canvasSketch = mainOffscreenCanvas.toDataURL('image/png');
+      await setDoc(docRef, pbData);
+      showToast('Sketsa Cooling Layout berhasil disimpan!', 'success');
+    } catch (e) {
+      console.error("Firebase saveSketch Error:", e);
+      showToast('Gagal menyimpan sketsa.', 'error');
+    }
   });
 }
 
-function saveParamBank() {
+async function saveParamBank() {
   const key = getPBKey();
   if (!key) { showToast('Pilih Mesin, Mould, dan Material terlebih dahulu!', 'error'); return; }
   const data = {};
@@ -1370,23 +1503,38 @@ function saveParamBank() {
   const canvas = document.getElementById('coolingCanvas');
   if (canvas) data.canvasSketch = canvas.toDataURL('image/png');
 
-  localStorage.setItem(key, JSON.stringify(data));
-  showToast('Parameter berhasil disimpan!', 'success');
+  showToast('Menyimpan parameter...', 'info');
+  const btn = document.getElementById('pb_saveBtn');
+  if(btn) btn.disabled = true;
+  try {
+    await setDoc(doc(db, "parameters", key), data);
+    showToast('Parameter berhasil disimpan!', 'success');
+  } catch (e) {
+    console.error("Firebase saveParamBank Error:", e);
+    showToast('Gagal menyimpan parameter.', 'error');
+  }
+  if(btn) btn.disabled = false;
 }
 
-function loadParamBank() {
+async function loadParamBank() {
   const key = getPBKey();
   if (!key) { showToast('Pilih Mesin, Mould, dan Material terlebih dahulu!', 'error'); return; }
-  const raw = localStorage.getItem(key);
-  if (!raw) {
-    PB_FIELD_IDS.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
-    mouldCloseRows = 3; mouldOpenRows = 3;
-    renderMouldRows('close'); renderMouldRows('open');
-    showToast('Data parameter belum tersedia untuk kombinasi ini.', 'info');
-    return;
-  }
+  
+  showToast('Memuat data parameter...', 'info');
+  const btn = document.getElementById('pb_loadBtn');
+  if (btn) btn.disabled = true;
   try {
-    const data = JSON.parse(raw);
+    const docSnap = await getDoc(doc(db, "parameters", key));
+    if (!docSnap.exists()) {
+      PB_FIELD_IDS.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+      mouldCloseRows = 3; mouldOpenRows = 3;
+      renderMouldRows('close'); renderMouldRows('open');
+      showToast('Data parameter belum tersedia untuk kombinasi ini.', 'info');
+      if (btn) btn.disabled = false;
+      return;
+    }
+    
+    const data = docSnap.data();
     PB_FIELD_IDS.forEach(id => { const el = document.getElementById(id); if (el && data[id] !== undefined) el.value = data[id]; });
     
     // Load dynamic rows
@@ -1432,7 +1580,11 @@ function loadParamBank() {
     }
 
     showToast('Parameter berhasil dimuat!', 'success');
-  } catch (e) { showToast('Gagal membaca data parameter.', 'error'); }
+  } catch (e) {
+    console.error("Firebase loadParamBank Error:", e);
+    showToast('Gagal membaca data parameter.', 'error'); 
+  }
+  if (btn) btn.disabled = false;
 }
 
 // ----------------------------------------------------------------
@@ -1451,6 +1603,30 @@ function showToast(msg, type = 'info') {
   t.innerHTML = `<span class="toast-icon">${icons[type] || icons.info}</span><span>${msg}</span>`;
   stack.appendChild(t);
   setTimeout(() => t.parentNode?.removeChild(t), 3100);
+}
+
+async function saveChecksheet() {
+  const v = id => document.getElementById(id)?.value || '-';
+  showToast('Menyimpan laporan ke Cloud...', 'info');
+  
+  const reportData = {
+    date: document.getElementById('hi_date')?.value || new Date().toISOString().split('T')[0],
+    trialNumber: document.getElementById('hi_trialNumber')?.value || '',
+    moldCode: document.getElementById('hi_moldCode')?.value || '',
+    partName: document.getElementById('hi_partName')?.value || '',
+    machine: document.getElementById('pb_machine')?.value || '',
+    material: document.getElementById('pb_material')?.value || '',
+    judgment: state.moldStatus || 'N/A',
+    createdAt: new Date().toISOString()
+  };
+  
+  try {
+    await addDoc(collection(db, "reports"), reportData);
+    showToast('Laporan berhasil disimpan ke Cloud!', 'success');
+  } catch (e) {
+    console.error("Firebase saveChecksheet Error:", e);
+    showToast('Gagal menyimpan laporan.', 'error');
+  }
 }
 
 // ----------------------------------------------------------------
@@ -1474,6 +1650,7 @@ function exportReport() {
     if (val === 'NG') return `<span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:4px;font-weight:700;">NG</span>`;
     if (val === 'YES') return `<span style="background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:4px;font-weight:700;">YES</span>`;
     if (val === 'NO') return `<span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:4px;font-weight:700;">NO</span>`;
+    if (val === 'N/A' || val === 'na') return `<span style="background:#f3f4f6;color:#4b5563;padding:2px 8px;border-radius:4px;font-weight:700;">N/A</span>`;
     return `<span style="color:#9ca3af;">-</span>`;
   };
 
@@ -1740,7 +1917,7 @@ function exportReport() {
   if (typeof html2pdf === 'undefined') { showToast('Library PDF belum siap.', 'error'); return; }
   el.style.display = 'block';
   html2pdf().set({
-    margin: [12, 10, 12, 10],
+    margin: [5, 10, 12, 10],
     filename: `MTER_Report_${v('hi_moldCode')}_${v('hi_date')}.pdf`,
     image: { type: 'jpeg', quality: .97 },
     html2canvas: { scale: 2, useCORS: true, logging: false },
@@ -1749,10 +1926,7 @@ function exportReport() {
 }
 
 // ----------------------------------------------------------------
-// SIDEBAR OPEN / CLOSE
-// ----------------------------------------------------------------
-function openSidebar() { document.getElementById('sidebar').classList.add('open'); document.getElementById('sidebarOverlay').classList.add('open'); document.getElementById('hamburger').classList.add('is-open'); document.body.style.overflow = 'hidden'; }
-function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebarOverlay').classList.remove('open'); document.getElementById('hamburger').classList.remove('is-open'); document.body.style.overflow = ''; }
+// (openSidebar / closeSidebar removed — sidebar has been eliminated)
 
 // ----------------------------------------------------------------
 // ANALYTICS DASHBOARD
@@ -1760,13 +1934,28 @@ function closeSidebar() { document.getElementById('sidebar').classList.remove('o
 let trendChartInstance = null;
 let judgmentChartInstance = null;
 
-function renderAnalyticsDashboard() {
+async function renderAnalyticsDashboard() {
   if (typeof Chart === 'undefined') {
     showToast('Library Chart.js belum siap.', 'error');
     return;
   }
   
-  const saved = JSON.parse(localStorage.getItem('mter-reports') || '[]');
+  const chartContainers = document.querySelectorAll('.chart-wrapper');
+  chartContainers.forEach(c => c.style.opacity = '0.5'); // visual loading
+  
+  let saved = [];
+  try {
+    const querySnapshot = await getDocs(collection(db, "reports"));
+    querySnapshot.forEach((doc) => {
+      saved.push({ id: doc.id, ...doc.data() });
+    });
+  } catch (e) {
+    console.error("Firebase fetch analytics error:", e);
+    showToast('Gagal memuat data analitik.', 'error');
+    chartContainers.forEach(c => c.style.opacity = '1');
+    return;
+  }
+  chartContainers.forEach(c => c.style.opacity = '1');
   
   // Update Machine Filter Dropdown
   const machineSelect = document.getElementById('analyticsMachine');
@@ -1867,10 +2056,13 @@ function renderAnalyticsDashboard() {
   if (ctxTrend) {
     if (trendChartInstance) trendChartInstance.destroy();
     
-    // Group by Date for simple trend
+    // Group by Date for simple trend (with null/invalid date guard)
     const trendMap = {};
     filtered.forEach(r => {
-      const d = new Date(r.date).toISOString().split('T')[0];
+      if (!r.date) return; // skip entries with no date
+      const parsed = new Date(r.date);
+      if (isNaN(parsed.getTime())) return; // skip invalid dates
+      const d = parsed.toISOString().split('T')[0];
       if (!trendMap[d]) trendMap[d] = { total: 0, ng: 0 };
       trendMap[d].total++;
       if (r.judgment === 'REJECTED') trendMap[d].ng++;
@@ -1966,18 +2158,14 @@ function init() {
     sel.addEventListener('change', () => { inp.style.display = sel.value === 'Lainnya' ? '' : 'none'; });
   });
 
-  document.getElementById('hamburger')?.addEventListener('click', () => {
-    document.getElementById('sidebar').classList.contains('open') ? closeSidebar() : openSidebar();
-  });
-  document.getElementById('sidebarOverlay')?.addEventListener('click', closeSidebar);
-
   document.querySelectorAll('[data-save-section]').forEach(btn => {
     btn.addEventListener('click', () => saveSection(btn.dataset.saveSection));
   });
 
   initMouldDropdown();
-  document.getElementById('pb_saveBtn')?.addEventListener('click', saveParamBank);
-  document.getElementById('pb_loadBtn')?.addEventListener('click', loadParamBank);
+  // Attach save/load to ALL matching buttons (menu page has pb_saveBtn too)
+  document.querySelectorAll('#pb_saveBtn').forEach(b => b.addEventListener('click', saveParamBank));
+  document.querySelectorAll('#pb_loadBtn').forEach(b => b.addEventListener('click', loadParamBank));
   renderMouldRows('close');
   renderMouldRows('open');
   initCoolingCanvas();
@@ -1994,13 +2182,48 @@ function init() {
     showToast('Filter diterapkan.', 'success');
   });
 
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSidebar(); });
+  // Inject 'Back to Menu' button dynamically into each step-panel
+  // The destination depends on which mode owns the panel
+  document.querySelectorAll('.step-panel').forEach(panel => {
+    if (!panel.querySelector('.btn-back-to-menu')) {
+      const btn = document.createElement('button');
+      btn.className = 'btn-back-to-menu';
+      btn.innerHTML = '\u2190 Kembali ke Menu';
+      // panel-pb-* panels go back to parambankmenu; all others go to mtermenu
+      const targetMenu = panel.id.startsWith('panel-pb-') ? 'parambankmenu' : 'mtermenu';
+      btn.onclick = () => switchMode(targetMenu);
+      panel.insertBefore(btn, panel.firstChild);
+    }
+  });
 
-  // Restore state from sessionStorage
+  // Restore state from sessionStorage or fallback to home
   const savedMode = sessionStorage.getItem('currentMode');
   const savedPanel = sessionStorage.getItem('activePanelId');
   if (savedPanel) activePanelId = savedPanel;
-  switchMode(savedMode || 'parambank');
+  
+  if (savedMode) {
+    switchMode(savedMode, false);
+  } else {
+    // Default navigation on first load
+    history.replaceState({ mode: 'home' }, '', '#home');
+    switchMode('home', false);
+  }
 }
+
+// ----------------------------------------------------------------
+// GLOBAL SCOPE EXPOSURE
+// Fungsi-fungsi ini dipanggil melalui inline handler (onclick="...")
+// di HTML. Karena script ini berjalan sebagai ES6 Module, semua
+// identifier terisolasi dalam module scope — harus di-bind ke
+// window agar browser dapat menemukannya dari luar modul.
+// ----------------------------------------------------------------
+window.switchMode      = switchMode;
+window.showPanel       = showPanel;
+window.exportReport    = exportReport;
+window.addB5Zone       = addB5Zone;
+window.removeB5Zone    = removeB5Zone;
+window.pbAddMouldRow   = pbAddMouldRow;
+window.pbRemoveMouldRow= pbRemoveMouldRow;
+window.showToast       = showToast;
 
 document.addEventListener('DOMContentLoaded', init);

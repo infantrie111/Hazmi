@@ -10,7 +10,8 @@ import {
   getDocs,
   doc,
   setDoc,
-  getDoc
+  getDoc,
+  deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
 
@@ -330,7 +331,7 @@ function showPanel(panelId, skipPushState = false) {
 function switchMode(mode, skipPushState = false) {
   const pl = document.getElementById('printLayout');
   if (pl) pl.style.display = 'none';
-  
+
   currentMode = mode;
   sessionStorage.setItem('currentMode', mode);
   document.body.classList.toggle('is-home', mode === 'home');
@@ -610,7 +611,9 @@ async function renderReportHistory() {
     showToast('Gagal memuat riwayat laporan.', 'error');
   }
 
+  // Kosongkan list LALU selamatkan emptyEl agar tidak ikut terhapus dari DOM
   listEl.innerHTML = '';
+  if (emptyEl) listEl.appendChild(emptyEl);
 
   if (saved.length === 0) {
     emptyEl.style.display = 'flex';
@@ -627,7 +630,10 @@ async function renderReportHistory() {
         <div class="rh-item-meta"><span class="rh-item-badge${badgeClass}">${report.trialNumber || 'Trial #?'}</span><span class="rh-item-date">${d.toISOString().split('T')[0]}</span></div>
         <div class="rh-item-info"><p class="rh-item-mold">${report.moldCode || 'MOLD-?'} &mdash; ${report.partName || 'Unknown Part'}</p><p class="rh-item-detail">Mesin: ${report.machine || '-'} &bull; Material: ${report.material || '-'} &bull; Judgment: ${report.judgment || 'N/A'}</p></div>
         <div class="rh-item-actions">
-          <button class="rh-btn-view" onclick="showToast('Fitur View Report belum tersedia.','info')"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg> View</button>
+          <button class="rh-btn-view" onclick="window.viewReport('${report.id}')">View</button>
+          <button onclick="window.deleteReport('${report.id}')" title="Hapus Laporan" style="background: #fee2f2; color: #dc2626; border: 1px solid #fca5a5; padding: 6px 10px; border-radius: var(--r-md); cursor: pointer; display: flex; align-items: center; justify-content: center;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+          </button>
         </div>`;
       listEl.appendChild(div);
     });
@@ -755,7 +761,7 @@ function buildToggleItemsNoYes(containerId, items, stateKey, notesKey) {
           wrap.querySelectorAll('.t-btn').forEach(b => b.classList.remove('sel'));
           btn.classList.add('sel');
         }
-      if (typeof saveDraftToLocal === 'function') saveDraftToLocal();
+        if (typeof saveDraftToLocal === 'function') saveDraftToLocal();
       });
     });
 
@@ -822,8 +828,8 @@ function buildB5CoolingItems() {
             wrap.querySelectorAll('.nipple-btn').forEach(b => b.classList.remove('sel'));
             btn.classList.add('sel');
           }
-        if (typeof saveDraftToLocal === 'function') saveDraftToLocal();
-      });
+          if (typeof saveDraftToLocal === 'function') saveDraftToLocal();
+        });
       });
       const noteBtn = wrap.querySelector('.note-icon-btn');
       noteBtn?.addEventListener('click', () => {
@@ -880,7 +886,7 @@ function buildB5CoolingItems() {
           wrap.querySelectorAll('.t-btn').forEach(b => b.classList.remove('sel'));
           btn.classList.add('sel');
         }
-      if (typeof saveDraftToLocal === 'function') saveDraftToLocal();
+        if (typeof saveDraftToLocal === 'function') saveDraftToLocal();
       });
     });
 
@@ -1237,7 +1243,7 @@ function initCoolingCanvas() {
   offCtx.fillStyle = '#ffffff';
   offCtx.fillRect(0, 0, canvas.width, canvas.height);
 
-  window.saveCanvasDraft = function() {
+  window.saveCanvasDraft = function () {
     try {
       localStorage.setItem('mter_sketch_draft', canvas.toDataURL());
     } catch (e) { console.error('Save sketch error:', e); }
@@ -1606,11 +1612,11 @@ async function loadParamBank() {
       PB_FIELD_IDS.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
       mouldCloseRows = 3; mouldOpenRows = 3;
       renderMouldRows('close'); renderMouldRows('open');
-      
+
       if (currentMode === 'parambankmenu') {
         renderParamBankMenu();
       }
-      
+
       showToast('Data parameter belum tersedia untuk kombinasi ini.', 'info');
       if (btn) btn.disabled = false;
       return;
@@ -1691,43 +1697,76 @@ function showToast(msg, type = 'info') {
 }
 
 async function saveChecksheet() {
-  const v = id => document.getElementById(id)?.value || '-';
+  // Ambil data dari DOM — gunakan fallback berantai agar tidak menyimpan laporan kosong
+  const getVal = id => document.getElementById(id)?.value?.trim() || '';
+
+  const dateVal = getVal('hi_date');
+  const trialNum = getVal('hi_trialNumber');
+  const moldCode = getVal('hi_moldCode');
+  const partName = getVal('hi_partName');
+
+  // Mesin & Material bisa berada di form Parameter Bank (pb_) atau field MTER sendiri
+  const machine = getVal('pb_machine') || getVal('a_machine') || '';
+  const material = getVal('pb_material') || getVal('a_material') || '';
+
+  // Judgment diambil dari state (diisi oleh radio group 'hi_moldStatusGroup')
+  const judgment = state.moldStatus || 'N/A';
+
+  // Guard: minimal harus ada tanggal atau mold code agar tidak menyimpan data benar-benar kosong
+  if (!dateVal && !moldCode && !trialNum) {
+    showToast('Tidak ada data untuk disimpan. Isi minimal Tanggal atau Mold Code terlebih dahulu.', 'error');
+    return;
+  }
+
   showToast('Menyimpan laporan ke Cloud...', 'info');
 
   const reportData = {
-    date: document.getElementById('hi_date')?.value || new Date().toISOString().split('T')[0],
-    trialNumber: document.getElementById('hi_trialNumber')?.value || '',
-    moldCode: document.getElementById('hi_moldCode')?.value || '',
-    partName: document.getElementById('hi_partName')?.value || '',
-    machine: document.getElementById('pb_machine')?.value || '',
-    material: document.getElementById('pb_material')?.value || '',
-    judgment: state.moldStatus || 'N/A',
+    date: dateVal || new Date().toISOString().split('T')[0],
+    trialNumber: trialNum,
+    moldCode: moldCode,
+    partName: partName,
+    machine: machine,
+    material: material,
+    judgment: judgment,
     createdAt: new Date().toISOString()
   };
 
   try {
     await addDoc(collection(db, "reports"), reportData);
+
+    // Bersihkan draft localStorage setelah berhasil disimpan
     localStorage.removeItem('mter_draft');
-    
     Object.keys(localStorage).forEach(key => {
-      if (key.startsWith('mter-saved-')) {
-        localStorage.removeItem(key);
-      }
+      if (key.startsWith('mter-saved-')) localStorage.removeItem(key);
     });
     state.saved = {};
-    
+
     showToast('Laporan berhasil disimpan ke Cloud!', 'success');
   } catch (e) {
     console.error("Firebase saveChecksheet Error:", e);
-    showToast('Gagal menyimpan laporan.', 'error');
+    showToast('Gagal menyimpan laporan. Periksa koneksi internet Anda.', 'error');
   }
 }
 
+window.saveChecksheet = saveChecksheet;
+
 // ----------------------------------------------------------------
-// EXPORT PDF — Full Report
+// CLOSE PREVIEW
+// ----------------------------------------------------------------
+function closePreview() {
+  const el = document.getElementById('printLayout');
+  if (!el) return;
+  el.classList.remove('preview-mode');
+  el.style.display = 'none';
+  el.innerHTML = '';
+}
+window.closePreview = closePreview;
+
+// ----------------------------------------------------------------
+// EXPORT REPORT — View (in-app preview) / Download (Excel)
 // ----------------------------------------------------------------
 function exportReport(action = 'download') {
-  showToast(action === 'view' ? 'Menyiapkan pratinjau PDF...' : 'Menyiapkan PDF...', 'info');
+  showToast(action === 'view' ? 'Menyiapkan pratinjau...' : 'Menyiapkan Excel...', 'info');
   const el = document.getElementById('printLayout');
   if (!el) return;
 
@@ -2008,35 +2047,319 @@ function exportReport(action = 'download') {
     </div>
   </div>`;
 
-  if (typeof html2pdf === 'undefined') { showToast('Library PDF belum siap.', 'error'); return; }
-  el.style.display = 'block';
-  html2pdf().set({
-    margin: [5, 10, 12, 10],
-    filename: `MTER_Report_${v('hi_moldCode')}_${v('hi_date')}.pdf`,
-    image: { type: 'jpeg', quality: .97 },
-    html2canvas: { scale: 2, useCORS: true, logging: false },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-  });
-  
+  // ============================================================
+  // VIEW: Tampilkan in-app preview (tanpa html2pdf)
+  // ============================================================
   if (action === 'view') {
-    pdf.from(el).outputPdf('bloburl').then((pdfUrl) => { 
-      el.style.display = 'none'; 
-      window.open(pdfUrl, '_blank');
-      showToast('PDF berhasil dibuka di tab baru.', 'success'); 
-    }).catch((err) => {
-      el.style.display = 'none';
-      console.error("Error generating PDF view:", err);
-      showToast('Gagal memuat pratinjau PDF', 'error');
-    });
-  } else {
-    pdf.from(el).save().then(() => { 
-      el.style.display = 'none'; 
-      showToast('PDF berhasil diunduh!', 'success'); 
-    });
+    const closeBtn = `<button class="preview-close-btn" onclick="window.closePreview()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      Tutup Preview
+    </button>`;
+    // Sisipkan tombol tutup di paling atas, lalu konten laporan
+    el.innerHTML = closeBtn + el.innerHTML;
+    el.classList.add('preview-mode');
+    el.style.display = 'flex';
+    showToast('Pratinjau laporan dibuka.', 'success');
+    return;
   }
+
+  // ============================================================
+  // ============================================================
+  // DOWNLOAD: Generate Structured Excel via xlsx-js-style
+  // ============================================================
+  if (typeof XLSX === 'undefined') {
+    showToast('Library Excel belum siap. Coba muat ulang halaman.', 'error');
+    return;
+  }
+
+  // ── Style helpers ──────────────────────────────────────────
+  const ST = {
+    title: { font: { bold: true, sz: 14, color: { rgb: '1e3a5f' } }, alignment: { horizontal: 'center' } },
+    secHeader: {
+      font: { bold: true, sz: 11, color: { rgb: '0f172a' } },
+      fill: { fgColor: { rgb: 'CBD5E1' } },
+      border: { bottom: { style: 'medium', color: { rgb: '94A3B8' } } }
+    },
+    tblHeader: {
+      font: { bold: true, sz: 10, color: { rgb: 'FFFFFF' } },
+      fill: { fgColor: { rgb: '1e40af' } },
+      alignment: { horizontal: 'center' },
+      border: { bottom: { style: 'thin', color: { rgb: '93c5fd' } } }
+    },
+    label: { font: { bold: true, sz: 10 }, fill: { fgColor: { rgb: 'F1F5F9' } } },
+    value: { font: { sz: 10 } },
+    rowEven: { font: { sz: 10 }, fill: { fgColor: { rgb: 'F8FAFC' } } },
+    rowOdd: { font: { sz: 10 } },
+    ok: { font: { bold: true, sz: 10, color: { rgb: '065f46' } }, fill: { fgColor: { rgb: 'd1fae5' } }, alignment: { horizontal: 'center' } },
+    ng: { font: { bold: true, sz: 10, color: { rgb: '991b1b' } }, fill: { fgColor: { rgb: 'fee2e2' } }, alignment: { horizontal: 'center' } },
+    dash: { font: { sz: 10, color: { rgb: '94A3B8' } }, alignment: { horizontal: 'center' } },
+    note: { font: { sz: 9, color: { rgb: '6b7280' } } },
+  };
+
+  // ── Cell factory ───────────────────────────────────────────
+  const C = (v, s) => ({ v, s });
+  const empty = () => C('', {});
+
+  // ── Section push helpers ────────────────────────────────────
+  const rows = [];
+  const merges = [];
+
+  const pushTitle = (text) => {
+    rows.push([C(text, ST.title), empty(), empty(), empty()]);
+    merges.push({ s: { r: rows.length - 1, c: 0 }, e: { r: rows.length - 1, c: 3 } });
+  };
+  const pushEmpty = () => rows.push([empty(), empty(), empty(), empty()]);
+  const pushSecHeader = (text) => {
+    rows.push([C(text, ST.secHeader), C('', ST.secHeader), C('', ST.secHeader), C('', ST.secHeader)]);
+    merges.push({ s: { r: rows.length - 1, c: 0 }, e: { r: rows.length - 1, c: 3 } });
+  };
+  const pushKV = (key, val) => rows.push([C(key, ST.label), C(val, ST.value), empty(), empty()]);
+  const pushTblHeader = (...cols) => {
+    const padded = [...cols];
+    while (padded.length < 4) padded.push('');
+    rows.push(padded.map(c => C(c, ST.tblHeader)));
+  };
+  const statusCell = (s) => {
+    if (s === 'OK') return C('OK', ST.ok);
+    if (s === 'NG') return C('NG', ST.ng);
+    return C(s || '-', ST.dash);
+  };
+  const pushCheckRows = (items, stateObj, notesObj) => {
+    items.forEach((item, i) => {
+      const s = stateObj[i] || '';
+      const n = notesObj[i] || {};
+      const note = [n.action && `Action: ${n.action}`, n.result && `Result: ${n.result}`, n.remark && `Remark: ${n.remark}`].filter(Boolean).join(' | ') || '-';
+      const rowSt = i % 2 === 0 ? ST.rowEven : ST.rowOdd;
+      rows.push([C(i + 1, { ...rowSt, alignment: { horizontal: 'center' } }), C(item, rowSt), statusCell(s), C(note, ST.note)]);
+    });
+  };
+
+  // ── ROW BUILDER ─────────────────────────────────────────────
+  // Judul Utama
+  pushTitle('ALBEA — Mold Trial Evaluation Report (MTER Smart Checksheet)');
+  pushKV('Tanggal Cetak', new Date().toLocaleDateString('id-ID'));
+  pushEmpty();
+
+  // HEADER INFORMASI
+  pushSecHeader('HEADER INFORMASI');
+  pushKV('Trial Number', v('hi_trialNumber'));
+  pushKV('Date', v('hi_date'));
+  pushKV('Prepared By', v('hi_prepared'));
+  pushKV('Reviewed By', v('hi_reviewed'));
+  pushKV('Approved By', v('hi_approved'));
+  pushKV('Product Code', v('hi_productCode'));
+  pushKV('Mold Code', v('hi_moldCode'));
+  pushKV('Product Name', v('hi_productName'));
+  pushKV('Mold Maker', v('hi_moldMaker'));
+  pushKV('Part Name', v('hi_partName'));
+  pushKV('Mold Status', state.moldStatus || '-');
+  pushKV('Resin', v('hi_resin'));
+  pushKV('Brand / Grade', v('hi_brandGrade'));
+  pushEmpty();
+
+  // PARAMETER BANK — GENERAL
+  pushSecHeader('A. PARAMETER BANK — GENERAL INFORMATION');
+  const machine = v('pb_machine') === 'Lainnya' ? v('pb_machine_custom') : v('pb_machine');
+  const material = v('pb_material') === 'Lainnya' ? v('pb_material_custom') : v('pb_material');
+  pushKV('Mesin', machine);
+  pushKV('Nama Mould', v('pb_mould'));
+  pushKV('Material', material);
+  pushKV('Cavity', v('pb_cavity'));
+  pushKV('Produksi', v('pb_produksi'));
+  pushKV('Berat Shoot (g)', v('pb_berat_shoot'));
+  pushKV('Berat Unit (g)', v('pb_berat_unit'));
+  pushKV('Berat Runner (g)', v('pb_berat_runner'));
+  pushKV('Cycle Time (s)', v('pb_cycleTime'));
+  pushEmpty();
+
+  // TEMPERATUR
+  pushSecHeader('TEMPERATUR & HEATER (°C)');
+  pushTblHeader('Parameter', 'Nilai', '', '');
+  [['Nozzle', 'pb_nozzle'], ['Front', 'pb_front'], ['Middle', 'pb_middle'], ['Rear', 'pb_rear'],
+  ['Hopper Dryer', 'pb_hopper'], ['Cooling Cavity', 'pb_coolCavity'], ['Cooling Core', 'pb_coolCore'],
+  ['Oil Temp', 'pb_oilTemp'], ['Heater 1', 'pb_heater1'], ['Heater 2', 'pb_heater2'],
+  ['Heater 3', 'pb_heater3'], ['Heater 4', 'pb_heater4'], ['Block', 'pb_block'], ['HN Sprue', 'pb_hnSprue']
+  ].forEach(([k, id], i) => {
+    const rowSt = i % 2 === 0 ? ST.rowEven : ST.rowOdd;
+    rows.push([C(k, ST.label), C(v(id), rowSt), empty(), empty()]);
+  });
+  pushEmpty();
+
+  // INJECTION DATA
+  pushSecHeader('INJECTION DATA (Stage 1–7)');
+  pushTblHeader('Stage', 'V (mm/s)', 'P (bar)', 'LS (mm)');
+  [1, 2, 3, 4, 5, 6, 7].forEach((s, i) => {
+    const rowSt = i % 2 === 0 ? ST.rowEven : ST.rowOdd;
+    rows.push([C(s, { ...rowSt, alignment: { horizontal: 'center' } }), C(v('pb_v' + s), rowSt), C(v('pb_p' + s), rowSt), C(v('pb_ls' + s), rowSt)]);
+  });
+  pushEmpty();
+
+  // HOLDING PRESSURE
+  pushSecHeader('HOLDING PRESSURE');
+  pushTblHeader('Stage', 'P (bar)', 'T (s)', '');
+  [5, 4, 3, 2, 1].forEach((s, i) => {
+    const rowSt = i % 2 === 0 ? ST.rowEven : ST.rowOdd;
+    rows.push([C('P' + s, { ...rowSt, alignment: { horizontal: 'center' } }), C(v('pb_hold_p' + s), rowSt), C(v('pb_hold_t' + s), rowSt), empty()]);
+  });
+  pushEmpty();
+
+  // PLASTIFIKASI
+  pushSecHeader('PLASTIFIKASI & MELT DECOMP');
+  pushKV('Screw Speed (rpm)', v('pb_screwSpeed'));
+  pushKV('Back Pressure (bar)', v('pb_backPress'));
+  pushKV('Dosing Position (mm)', v('pb_dosingPos'));
+  pushKV('Speed VSB (mm/s)', v('pb_vsb'));
+  pushKV('Stroke LSB (mm)', v('pb_lsb'));
+  pushEmpty();
+
+  // EJECTOR
+  pushSecHeader('EJECTOR');
+  pushKV('Knock Out No', v('pb_ej_ko'));
+  pushKV('Semi-Auto', v('pb_ej_semi'));
+  pushKV('Standard', v('pb_ej_std'));
+  pushKV('Pre-Eject', v('pb_ej_pre'));
+  pushEmpty();
+
+  // TIMING
+  pushSecHeader('CYCLE TIME & TIMING');
+  pushKV('Cooling Time (s)', v('pb_coolingTime'));
+  pushKV('Cure Time (s)', v('pb_cureTime'));
+  pushKV('Injection Time (s)', v('pb_injTime'));
+  pushKV('Suck Back (mm)', v('pb_suckBack'));
+  pushEmpty();
+
+  // MOULD CLOSE/OPEN
+  pushSecHeader('MOULD CLOSE / OPEN');
+  pushTblHeader('Step', 'SP', 'Position', '');
+  Array.from({ length: mouldCloseRows }, (_, i) => {
+    const rowSt = i % 2 === 0 ? ST.rowEven : ST.rowOdd;
+    rows.push([C(`CL ${i + 1}`, rowSt), C(document.getElementById(`pb_close_sp_${i + 1}`)?.value || '-', rowSt), C(document.getElementById(`pb_close_pos_${i + 1}`)?.value || '-', rowSt), empty()]);
+  });
+  Array.from({ length: mouldOpenRows }, (_, i) => {
+    const rowSt = i % 2 === 0 ? ST.rowEven : ST.rowOdd;
+    rows.push([C(`OP ${i + 1}`, rowSt), C(document.getElementById(`pb_open_sp_${i + 1}`)?.value || '-', rowSt), C(document.getElementById(`pb_open_pos_${i + 1}`)?.value || '-', rowSt), empty()]);
+  });
+  pushEmpty();
+
+  // COOLING CHANNEL ZONES
+  pushSecHeader('B.5 COOLING CHANNEL ZONES');
+  pushTblHeader('Zona', 'IN Temp (°C)', 'OUT Temp (°C)', 'Flow (L/min)');
+  state.b5ZonesData.slice(0, state.b5ZonesCount).forEach((z, i) => {
+    const rowSt = i % 2 === 0 ? ST.rowEven : ST.rowOdd;
+    rows.push([C(`Zona ${i + 1}`, rowSt), C(z.inTemp || '-', rowSt), C(z.outTemp || '-', rowSt), C(z.flow || '-', rowSt)]);
+  });
+  pushEmpty();
+
+  // CHECKSHEET B.1 – B.9, C, D
+  const checkSections = [
+    ['B.1 OPENING MECHANISM', B1_OPENING, state.b1, state.b1Notes],
+    ['B.2 SLIDER MECHANISM', B2_SLIDER, state.b2, state.b2Notes],
+    ['B.3 EJECTOR MECHANISM', B3_EJECTOR, state.b3, state.b3Notes],
+    ['B.4 HYDRAULIC SYSTEM', B4_HYDRAULIC, state.b4, state.b4Notes],
+    ['B.5 COOLING SYSTEM', B5_COOLING, state.b5, state.b5Notes],
+    ['B.6 HOT RUNNER SYSTEM', B6_HOTRUNNER, state.b6, state.b6Notes],
+    ['B.7 UNSCREWING', B7_UNSCREWING, state.b7, state.b7Notes],
+    ['B.8 TAKE-OUT ROBOT', B8_TAKEOUT, state.b8, state.b8Notes],
+    ['B.9 BALANCING', B9_BALANCING, state.b9, state.b9Notes],
+    ['C. DEMOULDING', C_DEMOULDING, state.c, state.cNotes],
+    ['D. AESTHETIC INSPECTION', D_AESTHETIC, state.d, state.dNotes],
+  ];
+  checkSections.forEach(([title, items, stateObj, notesObj]) => {
+    pushSecHeader(title);
+    pushTblHeader('#', 'Item', 'Status', 'Notes');
+    pushCheckRows(items, stateObj, notesObj);
+    pushEmpty();
+  });
+
+  // CAVITY LAYOUT
+  pushSecHeader('CAVITY LAYOUT');
+  pushTblHeader('Cavity', 'Status', 'Action', 'Result / Remark');
+  state.cavities.forEach((cav, i) => {
+    const rowSt = i % 2 === 0 ? ST.rowEven : ST.rowOdd;
+    rows.push([C(`C${i + 1}`, { ...rowSt, alignment: { horizontal: 'center' } }), statusCell(cav.status?.toUpperCase() || '-'), C(cav.action || '-', rowSt), C(`${cav.result || '-'} | ${cav.remark || '-'}`, ST.note)]);
+  });
+  pushEmpty();
+
+  // CONCLUSION (F)
+  pushSecHeader('F. CONCLUSION & RECOMMENDATION');
+  pushKV('Produk', document.getElementById('f_produk')?.value || '-');
+  pushKV('Mesin', document.getElementById('f_mesin')?.value || '-');
+  pushKV('Mold', document.getElementById('f_mold')?.value || '-');
+  pushKV('Peripheral', document.getElementById('f_peripheral')?.value || '-');
+  pushEmpty();
+
+  // SIGNATURES
+  pushSecHeader('SIGNATORIES');
+  pushTblHeader('Prepared By', 'Reviewed By', 'Approved By', '');
+  rows.push([C(v('hi_prepared'), ST.value), C(v('hi_reviewed'), ST.value), C(v('hi_approved'), ST.value), empty()]);
+
+  // ── Build worksheet ─────────────────────────────────────────
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{ wch: 5 }, { wch: 35 }, { wch: 15 }, { wch: 45 }];
+  ws['!merges'] = merges;
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'MTER Report');
+
+  const fileName = `MTER_Report_${v('hi_moldCode')}_${v('hi_date')}.xlsx`;
+  XLSX.writeFile(wb, fileName);
+  showToast('File Excel terstruktur berhasil diunduh!', 'success');
 }
 
 window.viewReportPDF = () => exportReport('view');
+
+window.deleteReport = async function (reportId) {
+  if (!reportId) { showToast('ID laporan tidak valid.', 'error'); return; }
+  if (!confirm('Apakah Anda yakin ingin menghapus laporan arsip ini?\nTindakan ini tidak dapat dibatalkan!')) return;
+
+  showToast('Menghapus laporan...', 'info');
+  try {
+    await deleteDoc(doc(db, "reports", reportId));
+    showToast('Laporan berhasil dihapus!', 'success');
+    // Perbarui tampilan list arsip secara langsung
+    renderReportHistory();
+  } catch (e) {
+    console.error("Error deleting report:", e);
+    showToast('Gagal menghapus laporan. Periksa koneksi internet Anda.', 'error');
+  }
+};
+
+window.viewReport = async function (reportId) {
+  if (!reportId) { showToast('ID laporan tidak valid.', 'error'); return; }
+  showToast('Mengambil data laporan...', 'info');
+  try {
+    const docRef = doc(db, "reports", reportId);
+    const docSnap = await getDoc(docRef);
+
+    if (!docSnap.exists()) {
+      showToast('Laporan tidak ditemukan di database!', 'error');
+      return;
+    }
+
+    const data = docSnap.data();
+
+    // Populasikan field DOM dengan data arsip
+    const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val ?? ''; };
+    setVal('hi_date', data.date || '');
+    setVal('hi_trialNumber', data.trialNumber || '');
+    setVal('hi_moldCode', data.moldCode || '');
+    setVal('hi_partName', data.partName || '');
+    setVal('pb_machine', data.machine || '');
+    setVal('pb_material', data.material || '');
+
+    // Pulihkan judgment ke state
+    if (data.judgment) state.moldStatus = data.judgment;
+
+    // Jika snapshot state penuh tersimpan, pulihkan seluruhnya
+    if (data.fullState) Object.assign(state, data.fullState);
+
+    // Buka pratinjau PDF — TANPA menyimpan ulang ke Firestore
+    exportReport('view');
+  } catch (e) {
+    console.error("Error viewing report:", e);
+    showToast('Gagal memuat data laporan. Periksa koneksi internet Anda.', 'error');
+  }
+};
 
 // ----------------------------------------------------------------
 // (openSidebar / closeSidebar removed — sidebar has been eliminated)
@@ -2310,10 +2633,10 @@ function init() {
     if (typeof saveDraftToLocal === 'function') saveDraftToLocal();
   });
   document.getElementById('cavRemoveBtn')?.addEventListener('click', () => {
-    if (state.cavities.length > 1) { 
-      state.cavities.pop(); 
-      state.cavityCount = state.cavities.length; 
-      renderCavityList(); 
+    if (state.cavities.length > 1) {
+      state.cavities.pop();
+      state.cavityCount = state.cavities.length;
+      renderCavityList();
       if (typeof saveDraftToLocal === 'function') saveDraftToLocal();
     }
     else showToast('Minimal 1 cavity harus ada.', 'info');
@@ -2395,7 +2718,7 @@ onAuthStateChanged(auth, (user) => {
   if (user) {
     const greetingEl = document.getElementById('userGreeting');
     if (greetingEl) greetingEl.textContent = getGreeting();
-    
+
     const emailEl = document.getElementById('userEmailDisplay');
     if (emailEl) emailEl.textContent = user.email || '';
 
@@ -2408,7 +2731,7 @@ onAuthStateChanged(auth, (user) => {
     // Hide all modes except homeMode to allow overlay effect
     const homeEl = document.getElementById('homeMode');
     if (homeEl) homeEl.style.display = 'block';
-    
+
     const modes = [
       'mterMode', 'mterMenuMode', 'paramBankMode',
       'paramBankMenuMode', 'coolingSketchMode', 'reportHistoryMode',
@@ -2423,7 +2746,7 @@ onAuthStateChanged(auth, (user) => {
   }
 });
 
-window.togglePasswordVisibility = function() {
+window.togglePasswordVisibility = function () {
   const passInput = document.getElementById('loginPassword');
   if (passInput) {
     passInput.type = passInput.type === 'password' ? 'text' : 'password';
@@ -2469,13 +2792,17 @@ async function handleLogout() {
 window.switchMode = switchMode;
 window.showPanel = showPanel;
 window.exportReport = exportReport;
+window.saveChecksheet = saveChecksheet;
+window.closePreview = closePreview;
+window.deleteReport = window.deleteReport;  // sudah di-assign di deklarasinya
+window.viewReport = window.viewReport;    // sudah di-assign di deklarasinya
 window.addB5Zone = addB5Zone;
 window.removeB5Zone = removeB5Zone;
 window.pbAddMouldRow = pbAddMouldRow;
 window.pbRemoveMouldRow = pbRemoveMouldRow;
 window.showToast = showToast;
 window.handleLogin = handleLogin;
-window.startNewTrial = function() {
+window.startNewTrial = function () {
   if (!confirm("Yakin ingin memulai trial baru? Semua isian yang belum disimpan ke Cloud akan terhapus!")) return;
 
   localStorage.removeItem('mter_draft');
@@ -2509,7 +2836,7 @@ window.startNewTrial = function() {
   state.c = {}; state.cNotes = {};
   state.d = {}; state.dNotes = {};
   state.moldStatus = '';
-  
+
   state.cavities.forEach(cav => {
     cav.status = '';
     cav.action = '';
@@ -2517,10 +2844,10 @@ window.startNewTrial = function() {
     cav.remark = '';
   });
 
-  mouldCloseRows = 3; 
+  mouldCloseRows = 3;
   mouldOpenRows = 3;
   if (typeof renderMouldRows === 'function') {
-    renderMouldRows('close'); 
+    renderMouldRows('close');
     renderMouldRows('open');
   }
 
@@ -2539,7 +2866,7 @@ window.startNewTrial = function() {
 
   if (typeof renderMterMenu === 'function') renderMterMenu();
   if (typeof renderParamBankMenu === 'function') renderParamBankMenu();
-  
+
   showToast('Siap untuk Trial Baru!', 'success');
 };
 

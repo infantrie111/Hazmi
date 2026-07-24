@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="id">
 
 <head>
@@ -12,6 +12,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <script type="module" src="script.js" defer></script>
@@ -58,7 +59,8 @@
           <label>Password</label>
           <input type="password" id="loginPassword" placeholder="••••••••" class="login-input">
         </div>
-        <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; font-size: 0.75rem; color: var(--text-secondary); text-align: left;">
+        <div
+          style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; font-size: 0.75rem; color: var(--text-secondary); text-align: left;">
           <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
             <input type="checkbox" id="showPasswordToggle" onchange="togglePasswordVisibility()"> Tampilkan Password
           </label>
@@ -81,7 +83,11 @@
             <span id="userEmailDisplay"></span>
           </div>
           <button class="btn-icon-logout" onclick="handleLogout()" title="Logout">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
           </button>
         </div>
         <img src="Logo.png" alt="ALBEA Logo" class="home-logo" onerror="this.style.display='none'">
@@ -145,8 +151,13 @@
     <div id="mterMenuMode" style="display:none;">
       <div class="mter-menu-header" style="justify-content: space-between;">
         <button class="btn-back-home" onclick="switchMode('home')">← Kembali</button>
-        <button onclick="startNewTrial()" style="background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px;">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+        <button onclick="startNewTrial()"
+          style="background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+            <path d="M3 3v5h5" />
+          </svg>
           Trial Baru
         </button>
       </div>
@@ -154,22 +165,34 @@
       <div class="mter-menu-container" id="mterMenuContainer">
         <!-- Injected by renderMterMenu() -->
       </div>
-      <div style="padding: 0 20px 24px;">
-        <div class="action-buttons-container" style="display: flex; gap: 12px; margin-top: 10px;">
-          <button class="view-pdf-btn" onclick="viewReportPDF()">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+      <div style="padding: 0 20px 24px; position: relative; z-index: 20;">
+        <div class="action-buttons-container">
+          <button class="view-pdf-btn" onclick="window.viewReportPDF()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
             View Laporan
           </button>
-          <button class="save-btn" onclick="exportReport()"
-            style="flex: 1; justify-content: center; border-radius: 12px; padding: 14px; margin-top: 0;">
+          <button class="pb-btn-save" onclick="window.saveChecksheet()">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
               style="margin-right: 6px;">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+              <polyline points="17 21 17 13 7 13 7 21" />
+              <polyline points="7 3 7 8 15 8" />
             </svg>
-            Download Laporan PDF
+            Simpan Laporan
+          </button>
+          <button class="save-btn" onclick="window.exportReport('download')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+              style="margin-right: 6px;">
+              <rect x="3" y="3" width="18" height="18" rx="2" />
+              <path d="M3 9h18M3 15h18M9 3v18" />
+            </svg>
+            Download Laporan Excel
           </button>
         </div>
       </div>
@@ -181,8 +204,13 @@
     <div id="paramBankMenuMode" style="display:none;">
       <div class="mter-menu-header" style="justify-content: space-between;">
         <button class="btn-back-home" onclick="switchMode('home')">← Kembali</button>
-        <button onclick="startNewTrial()" style="background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px;">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+        <button onclick="startNewTrial()"
+          style="background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+            <path d="M3 3v5h5" />
+          </svg>
           Trial Baru
         </button>
       </div>
@@ -1399,7 +1427,8 @@
                   <path d="m5 11 9 9" />
                 </svg>
               </button>
-              <input type="color" id="canvasColor" value="#1e40af" class="canvas-color-input" title="Ubah Warna" style="border: 1px solid #cbd5e1; border-radius: 4px; padding: 0; width: 32px; height: 32px; cursor: pointer; margin-left: 4px;" />
+              <input type="color" id="canvasColor" value="#1e40af" class="canvas-color-input" title="Ubah Warna"
+                style="border: 1px solid #cbd5e1; border-radius: 4px; padding: 0; width: 32px; height: 32px; cursor: pointer; margin-left: 4px;" />
             </div>
           </div>
           <div class="canvas-tool-group" style="flex:1; min-width:140px;">

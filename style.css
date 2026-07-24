@@ -1096,21 +1096,38 @@ body {
   background: #3b82f6;
   border: 1px solid #3b82f6;
   color: #ffffff;
+  transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.2s ease;
 }
 
 .pb-btn-load:hover {
-  background: #2563eb;
-  border-color: #2563eb;
+  filter: brightness(0.88);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(59, 130, 246, 0.3);
+}
+
+.pb-btn-load:active {
+  filter: brightness(0.82);
+  transform: translateY(0px);
+  box-shadow: none;
 }
 
 .pb-btn-save {
   background: #10b981;
   border: 1px solid #10b981;
   color: #ffffff;
+  transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.2s ease;
 }
 
 .pb-btn-save:hover {
-  background: #059669;
+  filter: brightness(0.88);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(16, 185, 129, 0.3);
+}
+
+.pb-btn-save:active {
+  filter: brightness(0.82);
+  transform: translateY(0px);
+  box-shadow: none;
 }
 
 .pb-grid {
@@ -2445,4 +2462,182 @@ body {
     width: 16px;
     height: 16px;
   }
+}
+
+/* ==========================================================================
+   ACTION BUTTONS — Unified System (Clean, No Conflict)
+   Menggunakan selector bertingkat agar tidak merusak .save-btn global
+   ========================================================================== */
+
+/* --- Container 3 Tombol Utama MTER Menu --- */
+.action-buttons-container {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  width: 100%;
+  position: relative;
+  z-index: 20;
+}
+
+@media (max-width: 768px) {
+  .action-buttons-container {
+    flex-direction: column;
+    gap: 12px;
+  }
+}
+
+/* --- Normalisasi 3 Tombol di dalam container
+     Proporsi identik dengan .pb-btn-load / .pb-btn-save di Parameter Bank
+     (reset konflik dari .save-btn global)
+     --- */
+.action-buttons-container .view-pdf-btn,
+.action-buttons-container .pb-btn-save,
+.action-buttons-container .save-btn {
+  /* Reset properti dari aturan .save-btn global yang bentrok */
+  width: auto !important;
+  margin-top: 0 !important;
+
+  /* Proporsional & seragam — identik dengan .pb-btn-load/.pb-btn-save */
+  flex: 1;
+  box-sizing: border-box;
+  padding: 8px 14px !important;  /* sama dengan PB buttons */
+
+  /* Tata letak isi tombol */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;                       /* sama dengan PB buttons */
+  white-space: nowrap;
+
+  /* Tipografi — identik dengan PB buttons */
+  font-family: var(--font, 'Inter', sans-serif);
+  font-size: 0.8rem !important;   /* sama dengan PB buttons (.8rem) */
+  font-weight: 600;
+
+  /* Dekorasi */
+  border: none;
+  border-radius: var(--r-md, 8px); /* sama dengan PB buttons */
+  color: #ffffff;
+  cursor: pointer;
+
+  /* Efek transisi seragam */
+  transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+/* Warna masing-masing tombol utama */
+.action-buttons-container .view-pdf-btn {
+  background-color: #eab308 !important; /* Kuning — View Laporan */
+  color: #ffffff !important;
+}
+
+.action-buttons-container .pb-btn-save {
+  background-color: #3b82f6 !important; /* Biru — Simpan Laporan */
+}
+
+.action-buttons-container .save-btn {
+  background-color: #16a34a !important; /* Hijau — Download Laporan PDF */
+}
+
+/* --- Efek Hover (menggelap + mengambang) --- */
+.action-buttons-container .view-pdf-btn:hover,
+.action-buttons-container .pb-btn-save:hover,
+.action-buttons-container .save-btn:hover {
+  filter: brightness(0.88);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.15);
+}
+
+/* --- Efek Active (turun saat diklik) --- */
+.action-buttons-container .view-pdf-btn:active,
+.action-buttons-container .pb-btn-save:active,
+.action-buttons-container .save-btn:active {
+  filter: brightness(0.82);
+  transform: translateY(0px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* ==========================================================================
+   OVERRIDE WARNA HIJAU: #pb_saveBtn (Simpan ke Cloud) & #saveSketchBtn (Save Sketch)
+   Keduanya harus hijau (#16a34a), TIDAK mengubah tombol Simpan Laporan yang biru.
+   ========================================================================== */
+#pb_saveBtn,
+#saveSketchBtn {
+  background-color: #16a34a !important;
+  border-color: #16a34a !important;
+  color: #ffffff !important;
+  transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.2s ease;
+}
+
+#pb_saveBtn:hover,
+#saveSketchBtn:hover {
+  filter: brightness(0.88);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(22, 163, 74, 0.3);
+}
+
+#pb_saveBtn:active,
+#saveSketchBtn:active {
+  filter: brightness(0.82);
+  transform: translateY(0px);
+}
+
+/* ==========================================================================
+   PREVIEW MODE — Fullscreen Laporan (View Laporan)
+   ========================================================================== */
+
+#printLayout.preview-mode {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+  overflow-y: auto;
+  background: rgba(15, 23, 42, 0.88);
+  padding: 20px 20px 60px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+#printLayout.preview-mode .print-page {
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  margin: 40px auto;
+  border-radius: 4px;
+  max-width: 900px;
+  width: 100%;
+}
+
+/* Tombol ✖ Tutup Preview */
+.preview-close-btn {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 10000;
+  background: #ef4444;
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 20px;
+  font-family: var(--font, 'Inter', sans-serif);
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.45);
+  transition: transform 0.15s ease, filter 0.15s ease, box-shadow 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.preview-close-btn:hover {
+  filter: brightness(0.9);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(239, 68, 68, 0.5);
+}
+
+.preview-close-btn:active {
+  transform: translateY(0);
+  filter: brightness(0.85);
 }
